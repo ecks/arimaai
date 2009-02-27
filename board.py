@@ -1,4 +1,4 @@
-# a comment
+# another comment
 class Board:
      GOLD = 0x0
      def __init__(self):
