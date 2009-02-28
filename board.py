@@ -1,5 +1,5 @@
 # another comment
-# eric test comment
+# eric2 test comment
 class Board:
      GOLD = 0x0
      def __init__(self):
