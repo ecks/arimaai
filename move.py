@@ -7,6 +7,6 @@ class Move:
     color = {'g' : "Gold", 's' : "Silver"}
 
 
-    def move(moveArg):
+    def move(self, moveArg):
         print moveArg
         
