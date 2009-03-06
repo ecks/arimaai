@@ -1,3 +1,5 @@
+import itertools
+
 # another comment
 # eric2 test comment
 
@@ -20,7 +22,10 @@
 
 
 class Board:
-  
+ 
+     cToNum = dict(zip(map(chr,range(97,105)),range(0,8))) # easy way to go from char to int, so cToNum['a'] => 0 .. cToNum['h'] => 7
+
+     color = {'g' : "Gold", 's' : "Silver"}
      pieces = {'E' : "Gold Elephant",
                'e' : "Silver Elephant",
                
@@ -41,14 +46,34 @@ class Board:
             
      GOLD = 0x0
      def __init__(self):
-         self.board = {}
-	 self.board[0][2] = "X"
+         self.board = [[] for i in range(8)]
+	 map(lambda xL : map(xL.append, itertools.repeat('.',8)), self.board)     # initialize empty board
+
+	 ####### trap squares
+	 self.board[2][2] = "X"
+	 self.board[2][5] = "X"
+	 self.board[5][2] = "X"
+	 self.board[5][5] = "X"
          self.nextToMove = self.GOLD
 	 self.totalMoves = 0
     
-         print "i";
 
+     def updateBoard(self, mv):
+	 self.board[-1*int(mv[2])][self.cToNum[mv[1]]] = mv[0];  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
 
-
-board = Board()
-
+     def printBoard(self):
+	 for i in self.board:
+	   for j in i:
+             print j,
+	   print
+    
+     def move(self, moveArg):
+         mv = moveArg.split();
+ 	 mvNum = mv[0][0];
+	 mvCol = mv[0][1];
+	 mvList = mv[1:];
+	 map(self.updateBoard, mvList);       # update board with element from list
+	 self.printBoard();
+	 print "Round: "+mvNum;
+	 print "Turn: "+self.color[mvCol];
+        
