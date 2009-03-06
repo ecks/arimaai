@@ -58,8 +58,19 @@ class Board:
 	 self.totalMoves = 0
     
 
-     def updateBoard(self, mv):
+     def initBoard(self, mv):
 	 self.board[-1*int(mv[2])][self.cToNum[mv[1]]] = mv[0];  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
+
+     def updateBoard(self, mv):
+         column = self.cToMove[mv[1]] 
+         row = -1*int(mv[2])
+         if mv[3] is "s":
+	   self.board[row+1][column] = mv[0]
+	   self.board[row][column] = "."  
+         elif mv[3] is "e":
+	   self.board[row][column+1] = mv[0]
+	   self.board[row][column] = "."  
+ 
 
      def printBoard(self):
 	 for i in self.board:
@@ -70,10 +81,14 @@ class Board:
      def move(self, moveArg):
          mv = moveArg.split();
  	 mvNum = mv[0][0];
-	 mvCol = mv[0][1];
+	 mvColor = mv[0][1];
 	 mvList = mv[1:];
-	 map(self.updateBoard, mvList);       # update board with element from list
+         if len(mvList[0]) < 4:
+	   map(self.initBoard, mvList);       # update board with element from list
+         else:
+	   map(self.updateBoard, mvList);
 	 self.printBoard();
 	 print "Round: "+mvNum;
-	 print "Turn: "+self.color[mvCol];
-        
+	 print "Turn: "+self.color[mvColor];
+
+ 
