@@ -67,9 +67,9 @@ class Board:
 	 self.board[-1*int(mv[2])][self.cToNum[mv[1]]] = mv[0];  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
 
      def updateBoard(self, mv):
+         piece = mv[0];
          column = self.cToNum[mv[1]]
          row = -1*int(mv[2])
-         piece = mv[0];
          
          if mv[3] is "s":
            if self.isValidMove((row+1,column), piece) == False:
@@ -84,13 +84,13 @@ class Board:
              self.board[row][column+1] = piece
 	     self.board[row][column] = "."
          elif mv[3] is "w":
-           if self.isValidMove((row,column-1), mv[0]) == False:
+           if self.isValidMove((row,column-1), piece) == False:
 	     print "Cannot move west!"
            else:
              self.board[row][column-1] = piece
 	     self.board[row][column] = "."
          elif mv[3] is "n":
-           if self.isValidMove((row-1,column), mv[0]) == False:
+           if self.isValidMove((row-1,column), piece) == False:
 	     print "Cannot move north!"
            else:
              self.board[row-1][column] = piece
