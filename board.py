@@ -62,7 +62,7 @@ class Board:
 	 self.board[-1*int(mv[2])][self.cToNum[mv[1]]] = mv[0];  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
 
      def updateBoard(self, mv):
-         column = self.cToMove[mv[1]] 
+         column = self.cToNum[mv[1]] 
          row = -1*int(mv[2])
          if mv[3] is "s":
 	   self.board[row+1][column] = mv[0]
