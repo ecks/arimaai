@@ -69,36 +69,37 @@ class Board:
      def updateBoard(self, mv):
          column = self.cToNum[mv[1]]
          row = -1*int(mv[2])
+         piece = mv[0];
          
          if mv[3] is "s":
-           if self.updateMove((row+1,column), mv[0]) == False:
+           if self.isValidMove((row+1,column), piece) == False:
 	     print "Cannot move south!"
            else:
+             self.board[row+1][column] = piece 
 	     self.board[row][column] = "."
          elif mv[3] is "e":
-           if self.updateMove((row,column+1), mv[0]) == False:
+           if self.isValidMove((row,column+1), piece) == False:
 	     print "Cannot move east!"
            else:
+             self.board[row][column+1] = piece
 	     self.board[row][column] = "."
          elif mv[3] is "w":
-           if self.updateMove((row,column-1), mv[0]) == False:
+           if self.isValidMove((row,column-1), mv[0]) == False:
 	     print "Cannot move west!"
            else:
+             self.board[row][column-1] = piece
 	     self.board[row][column] = "."
          elif mv[3] is "n":
-           if self.updateMove((row-1,column), mv[0]) == False:
+           if self.isValidMove((row-1,column), mv[0]) == False:
 	     print "Cannot move north!"
            else:
+             self.board[row-1][column] = piece
 	     self.board[row][column] = "."
         
-     def updateMove(self, (r,c), piece): 
-       
-          print self.board[r][c]
-          print r
-          print c
+     def isValidMove(self, (r,c), piece):
           if (r > -1 * self.limitOnBoard) and (r <= 0) and (c < self.limitOnBoard) and (c >= 0):
            if self.board[r][c] == ".":
-	     self.board[r][c] = piece
+	     return True
            else:
 	     return False
           else:
@@ -115,8 +116,12 @@ class Board:
  	 mvNum = mv[0][0];
 	 mvColor = mv[0][1];
 	 mvList = mv[1:];
+
+         # Initial setup.
          if len(mvList[0]) == 3:
 	   map(self.initBoard, mvList);       # update board with element from list
+         
+         # Regular move.
          elif len(mvList[0]) == 4:
            if len(mvList) <= 3:
 	     map(self.updateBoard, mvList);
