@@ -64,12 +64,12 @@ class Board:
     
 
      def initBoard(self, mv):
-	 self.board[-1*int(mv[2])][self.cToNum[mv[1]]] = mv[0];  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
+	 self.board[int(mv[2])][self.cToNum[mv[1]]] = mv[0];  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
 
      def updateBoard(self, mv):
          piece = mv[0];
          column = self.cToNum[mv[1]]
-         row = -1*int(mv[2])
+         row = int(mv[2])
          
          if mv[3] is "s":
            if self.isValidMove((row+1,column), piece) == False:
@@ -97,7 +97,7 @@ class Board:
 	     self.board[row][column] = "."
         
      def isValidMove(self, (r,c), piece):
-          if (r > -1 * self.limitOnBoard) and (r <= 0) and (c < self.limitOnBoard) and (c >= 0):
+          if (r < self.limitOnBoard) and (r >= 0) and (c < self.limitOnBoard) and (c >= 0):
            if self.board[r][c] == ".":
 	     return True
            else:
@@ -117,6 +117,8 @@ class Board:
 	 mvColor = mv[0][1];
 	 mvList = mv[1:];
 
+         mvList = map(lambda xL: xL[0:2] + str(int(xL[2])*(-1)+8) + xL[3:], mvList)  # convert from 8 -> 0, 7 -> 1 .. 1 -> 7, and assign back into mvList
+
          # Initial setup.
          if len(mvList[0]) == 3:
 	   map(self.initBoard, mvList);       # update board with element from list
@@ -127,7 +129,7 @@ class Board:
 	     map(self.updateBoard, mvList);
          # elif mvList[0] == "takeback":
              # to be implemented later
-         elif mvList[0] == "resigns":
+         elif mvList == "resigns":
            print "you lose"
          else:
            print "you passed an invalid string format"
