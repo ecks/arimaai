@@ -87,7 +87,7 @@ class Board:
 
          #Pieces can't move out of the board, and rabbits can't move backwards, and opponents pieces can only be moved by a push or pull
          if mv[3] is "s":
-           if self.isValidMove((row+1,column), pos, piece) == False or (piece == "R" and turn == "gold"):
+           if self.isValidMove((row+1,column), pos, piece) == False or (piece == "R" and self.turn == "gold"):
              print "Cannot move south!"
            else:
              self.board[row+1][column] = piece 
@@ -105,7 +105,7 @@ class Board:
              self.board[row][column-1] = piece
              self.board[row][column] = "."
          elif mv[3] is "n":
-           if self.isValidMove((row-1,column), pos, piece) == False or (piece == "r" and turn == "silver"):
+           if self.isValidMove((row-1,column), pos, piece) == False or (piece == "r" and self.turn == "silver"):
              print "Cannot move north!"
            else:
              self.board[row-1][column] = piece
@@ -116,13 +116,13 @@ class Board:
           if (r < self.limitOnBoard) and (r >= 0) and (c < self.limitOnBoard) and (c >= 0): #is move within board?
            if self.board[r][c] == ".": #moving to a blank space?
              valid = True
-          if self.board[origr][origc] != piece: #check if moving a real piece
+           if self.board[origr][origc] != piece: #check if moving a real piece
                print("Piece does not exist in that position")
                valid = False
           #Ensure a player can only move opponent's pieces on the case of a push/pull
           #Does not ensure that the next move ensures the 2nd part of a push/pull, that the next move
           #has this player's adjacent piece fill the position, code probably needs a rewrite to account for this
-          if turn == "gold" and piece >= "A":
+          if self.turn == "gold" and piece >= "A":
                if self.board[origr+1][origc] == ("." or (origr+1 > 8 or origr+1 < 0)):
                  if self.board[origr-1][origc] == ("." or (origr-1 > 8 or origr-1 < 0)):
                       if self.board[origr][origc+1] == ("." or (origc+1 > 8 or orig+1 < 0)):
@@ -159,6 +159,9 @@ class Board:
 
          mvList = map(lambda xL: xL[0:2] + str(int(xL[2])*(-1)+8) + xL[3:], mvList)  # convert from 8 -> 0, 7 -> 1 .. 1 -> 7, and assign back into mvList
 
+
+         print len(mvList)
+
          # Initial setup.
          if len(mvList[0]) == 3:
            map(self.initBoard, mvList);       # update board with element from list
@@ -176,8 +179,8 @@ class Board:
          self.printBoard();
          print "Round: "+mvNum;
          print "Turn: "+self.color[mvColor];
-         if turn == "gold":
-              turn == "silver"
+         if self.turn == "gold":
+              self.turn == "silver"
          else:
-              turn == "gold"
+              self.turn == "gold"
 
