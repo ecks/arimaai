@@ -30,8 +30,25 @@ Implement code to explicitly make player use or pass their 4 moves
 #  +-----------------+
 #    a b c d e d g h
 
+def init_a_board(limit, insideElement):
+         board = [[] for i in range(limit)]
+         map(lambda xL : map(xL.append, itertools.repeat(insideElement,limit)), board)     # initialize empty board
+	 return board
 
 
+GOLD = 0 
+SILVER = 6
+#	TURN_MASK = 1
+ELEPHANT = 6
+CAMEL = 5
+HORSE = 4
+DOG = 3
+CAT = 2
+RABBIT = 1
+EMPTY = 0
+MAX_COMBOS = (SILVER + ELEPHANT) + 1
+LIMIT_ON_BOARD = 8
+#	POS_MASK = 15
 
 class Board:
  
@@ -39,40 +56,39 @@ class Board:
 
      turn = "gold" #which player's turn is it?
      
-     pieces = {'.' : 0,
-               'E' : 6,
-               'e' : 6,
+     pieces = {'.' : EMPTY,
+	       'X' : EMPTY,
+               'E' : GOLD+ELEPHANT,
+               'e' : SILVER+ELEPHANT,
                
-               'M' : 5,
-               'm' : 5,
+               'M' : GOLD+CAMEL,
+               'm' : SILVER+CAMEL,
                
-               'H' : 4,
-               'h' : 4,
+               'H' : GOLD+HORSE,
+               'h' : SILVER+HORSE,
             
-               'D' : 3,
-               'd' : 3,
+               'D' : GOLD+DOG,
+               'd' : SILVER+DOG,
                
-               'C' : 2,
-               'c' : 2,
+               'C' : GOLD+CAT,
+               'c' : SILVER+CAT,
      
-               'R' : 1,
-               'r' : 1
-              }    
+               'R' : GOLD+RABBIT,
+               'r' : SILVER+RABBIT
+              } 
 
-     limitOnBoard = 8
+     hashkey = 0
+
 
      color = {'g' : "Gold", 's' : "Silver"}
-     GOLD = 0x0
      def __init__(self):
-         self.board = [[] for i in range(self.limitOnBoard)]
-         map(lambda xL : map(xL.append, itertools.repeat('.',self.limitOnBoard)), self.board)     # initialize empty board
-
+         self.board = init_a_board(LIMIT_ON_BOARD, '.')
          ####### trap squares
          self.board[2][2] = "X"
          self.board[2][5] = "X"
          self.board[5][2] = "X"
          self.board[5][5] = "X"
-         self.nextToMove = self.GOLD
+         self.nextToMove = GOLD
          self.totalMoves = 0
     
 
@@ -113,7 +129,7 @@ class Board:
         
      def isValidMove(self, (r,c), (origr, origc), piece):
           valid = False #Boolean of whether this is a valid move. Start as false to prevent unplanned moves
-          if (r < self.limitOnBoard) and (r >= 0) and (c < self.limitOnBoard) and (c >= 0): #is move within board?
+          if (r < LIMIT_ON_BOARD) and (r >= 0) and (c < LIMIT_ON_BOARD) and (c >= 0): #is move within board?
            if self.board[r][c] == ".": #moving to a blank space?
              valid = True
            if self.board[origr][origc] != piece: #check if moving a real piece
@@ -150,7 +166,23 @@ class Board:
              print chr(letter),
          print
 
-          
+     def printHashKey(self):
+	 print "Current hashkey:"
+	 print self.hashkey
+
+     def calculateHashkey(self, board, hash_board):
+         hashkey = 0
+	 for i in range(LIMIT_ON_BOARD):
+           for j in range(LIMIT_ON_BOARD):
+	     stringOfPos = board[i][j]
+	     intValueOfPos = self.pieces[stringOfPos]
+	     hashkey ^= hash_board[i][j][intValueOfPos]
+         self.hashkey = hashkey
+	 self.printHashKey()
+     
+     def getBoard(self):
+	 return self.board
+
      def move(self, moveArg):
          mv = moveArg.split();
          mvNum = mv[0][0];
