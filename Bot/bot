@@ -1,0 +1,820 @@
+#!/usr/bin/perl
+
+# Be sure to read the README.1st file to get started.
+#   You do not need to change anything in this file.
+#   Edit the bot.cfg file instead.
+
+# Examples of how the bot can be started:
+#   % bot - creates a new game and plays black (silver)
+#   % bot w - creates a new game plays white (gold)
+#   % bot play sam - joins the game sam has created
+#   % bot play sam b - if sam has created multiple games join
+#                      the one where the bot plays blac
+#   % bot play 284 - join game id 284 which is already created
+#   % bot play 284 w - join game id 284 as and play white
+#   % bot move sam - make one move in the game against sam; for postal games.
+#                    If 'move' is used, bot exits after making one move
+#                    and does not wait around for the opponents move.
+#                    So it has to be restarted to make the next move.
+
+
+# If you dont have these perl modules you can get them from
+#   http://www.cpan.org/modules/by-module/LWP/
+#   http://www.cpan.org/modules/by-module/HTTP/
+use LWP;
+use LWP::Simple;
+use HTTP::Request::Common;
+
+require "./bot.cfg";
+
+$G{grCgi} = "bot1gr.cgi";
+$G{netLog} = "$$.netLog";
+$G{gameLog} = "$$.gameLog";
+$G{watchLog} = "b$$.watchLog";
+$G{posFile} = "$C{runDir}/pos$$";
+$G{moveFile} = "$C{runDir}/move$$";
+$G{gamestateFile} = "$C{runDir}/gamestate$$";
+
+# Flush our output, so that there is no delay in writting
+$| = 1;
+
+# Check if the maxBot limit has been reached
+$n = howManyBots();
+if ($n >= $C{maxBots}){
+  watchLog("maxBots limit of $C{maxBots} reached; need to wait till some of the bots finish");
+  exit;
+}
+
+watchLog("**** bot started ****");
+netLog("**** bot started ****");
+gameLog("**** bot started ****");
+
+# Parse the input arguments
+($playAgainst, $playSide) = parseArguments();
+
+# This is so that if the process is terminated
+#   we can properly leave the game.
+setSignals();
+
+# 1 Login to the gameroom to get our session id 
+#   and also the names of the Post and Get scripts
+$G{grSid} = gameroomLogin($C{grUrl}, $C{login}, $C{passwd});
+
+# 2 Find the game to play or wait for one
+$G{gsSid} = findGame($G{grSid}, $playAgainst, $playSide);
+
+# 3 Play the game
+if ($G{gsSid}){
+  $res = playGame($G{gsSid});
+}
+
+# 4 Leave the table
+if ($G{gsSid}){
+  leaveGame($G{gsSid});
+}
+
+# 5 Logout of the gameroom; actually we don't
+#   need to do this, botman will take care of it
+#gameroomLogout($G{grSid});
+
+# Run a post game program if provided
+if ($C{postGameProg} ne ""){
+  if (! -e $C{postGameProg}){
+    watchLog("Can't find post game program $$C{postGameProg}");
+    exit;
+  }
+  `$C{postGameProg}`;
+}
+
+exit;
+
+sub setSignals{
+  $SIG{'HUP'} = \&catchSignal;
+  $SIG{'INT'} = \&catchSignal; 
+#  $SIG{'QUIT'} = \&catchSignal;
+#  $SIG{'ABRT'} = \&catchSignal;
+#  $SIG{'TERM'} = \&catchSignal;
+#  $SIG{'USR1'} = \&catchSignal;
+#  $SIG{'USR2'} = \&catchSignal;
+}
+
+sub catchSignal{
+  local($sig) = @_;
+
+# We can check for type of signal here if needed
+#   like: if ($sig eq "HUP"){
+  watchLog("got signal $sig");
+  if ($G{gsSid}){ 
+    watchLog("  about to clean up");
+    leaveGame($G{gsSid});
+  }
+  exit;
+}
+
+sub gameroomLogin{
+  local($url, $login, $passwd) = @_;
+  local(%p, %r, $s);
+
+  $p{username} = $login;
+  $p{password} = $passwd;
+  $p{action} = "login";
+  %r = doPost("$url/$G{grCgi}", %p);
+  $s = $r{sid};
+  $G{grUrl} = $url;
+  $G{grSid} = $r{sid};
+  watchLog("logged into the gameroom");
+  return($s);
+}
+
+
+sub findGame{
+  local($s, $against, $side) = @_;
+  local($url, %g, %gs);
+
+  $url = $G{grUrl};
+
+  %g = getGame($s, $against, $side);
+  if ($g{gid} eq ""){ return; }
+  %gs = reserveSeat($url, $s, $g{gid}, $g{side});
+  $G{gsSid} = sitDown(%gs);
+  if ($G{gsSid}){
+    $G{side} = $g{side};
+    $G{gid} = $g{gid};
+    touchFile("$C{runDir}/$G{gid}$G{side}.bot", "$$");
+  }
+  if ($G{gsSid}){
+    if ($g{player} eq ""){
+      watchLog("Created game gid=$g{gid} side=$g{side}; waiting for opponent");
+    }
+    else{
+      watchLog("Joined game gid=$g{gid} side=$g{side}; against $g{player}");
+      gameLog("Joined game gid=$g{gid} side=$g{side}; against $g{player}");
+    }
+  }
+  return $G{gsSid};
+}
+
+
+# Reserve our seat in the game
+sub reserveSeat{
+  local($url, $s, $gid, $side) = @_;
+  local(%p, %gs, $grPost);
+
+  $p{sid} = $s;
+  $p{action} = "reserve";
+  $p{gid} = $gid;
+  $p{side} = $side;
+  %gs = doPost("$url/$G{grCgi}", %p);
+  return %gs;
+}
+
+sub sitDown{
+  local(%gs) = @_;
+  local(%p, %r, $gsUrl, $gsCgi, $s);
+
+  $gsUrl = $gs{base};
+  $gsCgi = $gs{cgi};
+  $p{sid} = $gs{tid};
+  $p{grid} = $gs{grid};
+  $p{action} = "sit";
+  %r = doPost("$gsUrl/$gsCgi", %p);
+  $s = $r{sid};
+  $G{gsUrl} = $gsUrl;
+  $G{gsCgi} = $gsCgi;
+  return $s;
+}
+
+sub playGame{
+  local($s) = @_;
+  local(%gd, $move, $mySide, $opSide, $opPlayer);
+  local($repWho, $iWon, $gotMove, $waitingSince, $turnChange);
+
+  $mySide = $G{side};
+  $opSide = ($mySide eq 'w')?'b':'w';
+  $opPlayer = $opSide . "player";
+  %gd = getGameState($s);
+# If this is a postal game then continue only if an opponent 
+#   has joined and it is our turn; otherwise leave.
+  if ($gd{postal}){
+    if (($gd{"$opPlayer"} eq "") || ($gd{turn} ne $mySide)){
+      return;
+    }
+  }
+
+#   We check for plycount=1 so that bots playing postal
+#   games don't send hello everytime they come in to make the move.
+  if ($gd{plycount} <= 1){
+    sendChat($C{hello}); $chatSent = 1;
+  }
+  while($gd{result} eq ""){
+    $turnChange = time;
+    while(($gd{result} eq "") && (($gd{turn} eq "") || ($gd{turn} ne $mySide))){
+# a seperate process can be started here so that
+#   we can think while waiting for our turn
+# 2005.01.22 Omar added the following so that bots can play postal games
+#   by using the move command rather than the play command
+      if ($G{oneMove}){ return; }
+      $waitingSince = time;
+      %gd = getGameState($s, "wait");
+      if (($repWho eq '') && ($gd{$opPlayer} ne '')){
+        $gd{$opPlayer} =~ s/\W//g;
+        watchLog("playing against $gd{$opPlayer}.");
+        gameLog("playing against $gd{$opPlayer}.");
+        $repWho = 1;
+      }
+# If the game has not started and the oppent has left
+#   then we should leave also.  But if there has not been
+#   any change for a while we could get an empty response
+#   so make sure the timecontrol string is at least there
+#   to avoid getting tricked by an empty response 
+      if (($gd{starttime} eq "") && ($gd{"$opPlayer"} ne "") &&
+          ($gd{"${opSide}present"} < 1) && ($gd{timecontrol} ne "") ){
+# Give the opponent about 5 minutes to come back
+        while(((time - $turnChange) < 5*60) && ($gd{"${opSide}present"} < 1)){
+          sleep 10;
+          %gd = getGameState($s);
+        }
+        if ($gd{"${opSide}present"} < 1){
+          watchLog("$gd{$opPlayer} left before game started");
+          gameLog("$gd{$opPlayer} left before game started");
+          return;
+        }
+      }
+    }
+    if (($repWho eq '') && ($gd{$opPlayer} ne '')){
+      $gd{$opPlayer} =~ s/\W//g;
+      watchLog("playing against $gd{$opPlayer}");
+      gameLog("playing against $gd{$opPlayer}");
+      $repWho = 1;
+    }
+    if ($repWho eq ''){ 
+# If the game has not started and the opponent is not present 
+#   don't continue unless it is a postal game.
+      if ($gd{postal} < 1){
+        %gd = getGameState($s, "wait");
+        next; 
+      }
+    }
+    $gotMove = $gd{moves};
+    ($gotMove) = ($gotMove =~ m/\b(\d+$opSide [^\n]+)\n[^\n]*$/s);
+    if ($gotMove){
+      watchLog("got move $gotMove");
+      gameLog("$gotMove", 1);
+    }
+    else{
+      watchLog("starting the game");
+      gameLog("starting the game");
+      sendStartGame($s);
+    }
+    showPosition($gd{position});
+    if ($gd{result} eq ""){
+      if ($C{client}){
+        $move = getUserMove(%gd);
+      }
+      else{
+        $move = getMove(%gd);
+        watchLog("my move is $move");
+        if ($mySide eq "w"){ $gd{plycount} += 1; }
+        gameLog("$gd{plycount}$mySide $move", 1);
+# Dont need this anymore; used during testing
+#        sleep int(rand(2)+1);
+      }
+      postMove($s, $move);
+      %gd = getGameState($s);
+      showPosition($gd{position});
+    }
+  }
+  $iWon = ($gd{result} =~ m/^$mySide/i)?'I won':'I lost';
+  watchLog("game over, $iWon, result:$gd{result}");
+  saveGame(%gd);
+  return $gd{result};
+}
+
+sub sendStartGame{
+  local($s) = @_;
+  local(%p, %gd, $gsUrl, $gsCgi);
+
+  $gsUrl = $G{gsUrl};
+  $gsCgi = $G{gsCgi};
+  $p{sid} = $s;
+  $p{action} = "startmove";
+  $p{auth} = $G{auth};
+  %gd = doPost("$gsUrl/$gsCgi", %p);
+  return $gd{ok};
+}
+
+sub getGameState{
+  local($s, $w) = @_;
+  local(%p, %gd, $gsUrl, $gsCgi);
+
+  $gsUrl = $G{gsUrl};
+  $gsCgi = $G{gsCgi};
+  if ($G{lastchange} eq ""){ $G{lastchange} = 0; }
+  $p{sid} = $s;
+  $p{what} = "gamestate";
+  $p{wait} = 0;
+# if we are going to wait, set the wait timeout to 5 min
+  if ($w){ $p{wait} = 1; $p{maxwait} = 300; }
+  $p{lastchange} = $G{lastchange};
+  %gd = doPost("$gsUrl/$gsCgi", %p);
+  if ($gd{lastchange} ne ""){
+    $G{lastchange} = $gd{lastchange};
+  }
+  if ($gd{auth} ne ""){
+    $G{auth} = $gd{auth};
+  }
+  return %gd;
+}
+
+sub postMove{
+  local($s, $m) = @_;
+  local(%p, %gd, $gsUrl, $gsCgi);
+
+  $gsUrl = $G{gsUrl};
+  $gsCgi = $G{gsCgi};
+  $p{sid} = $s;
+  $p{action} = "move";
+  $p{move} = $m;
+  if ($m =~ m/resign/i){
+    $p{action} = "resign";
+    $p{move} = "";
+  }
+  $p{auth} = $G{auth};
+  %gd = doPost("$gsUrl/$gsCgi", %p);
+  return $gd{ok};
+}
+
+sub sendChat{
+  local($c) = @_;
+  local(%p, %gd, $gsUrl, $gsCgi);
+
+  $gsUrl = $G{gsUrl};
+  $gsCgi = $G{gsCgi};
+  $p{sid} = $G{gsSid};
+  $p{action} = "chat";
+  $p{chat} = $c;
+  $p{auth} = $G{auth};
+  %gd = doPost("$gsUrl/$gsCgi", %p);
+  return $gd{ok};
+}
+
+sub getMove{
+  local(%gd) = @_;
+  local(*FH, $move);
+  local($pf, $mf, $gf, $st, $et, $n);
+
+  $pf = $G{posFile};
+  $mf = $G{moveFile};
+  $gf = $G{gamestateFile};
+
+  open(FH, ">$pf");
+  print FH $gd{position};
+  close FH;
+
+  open(FH, ">$mf");
+  print FH $gd{moves};
+  close FH;
+
+  open(FH, ">$gf");
+  print FH $G{gamestate};
+  close FH;
+
+  $st = time;
+  $move = `$C{getMove} $pf $mf $gf $C{moreArgs}`;
+  $et = time;
+  if ($C{delay} > 0){
+    $n = $C{delay} - ($et-$st);
+# on some systems a negitive sleep is causing it to sleep forever
+#   we don't want that
+    if ($n>0){
+# But don't do this on the setup move; if the move string is less
+#   than 50 char then it is not the setup move.
+      if (length($move) < 50){
+        sleep($n);
+      }
+    }
+  }
+
+  $move =~ s/\n//g;
+  return $move;
+}
+
+# This is used if $C{client}=1
+sub getUserMove{
+  local(%gd) = @_;
+  local($m);
+
+  if ($gd{plycount} == 1){
+    print "some common setups\n";
+    if ($gd{turn} eq "w"){
+      print <<EOM;
+Ee2 Md2 Ca1 Dc2 Hb2 Hg2 Ch1 Df2 Rb1 Rc1 Rd1 Re1 Rf1 Rg1 Ra2 Rh2
+Ee2 Md2 Da1 Hb2 Dh1 Hg2 Cf1 Cc1 Rb1 Rd1 Re1 Rg1 Ra2 Rc2 Rf2 Rh2
+Ee2 Md2 Hh2 Dg2 Db1 Ca2 He1 Cf1 Ra1 Rc1 Rd1 Rg1 Rh1 Rb2 Rc2 Rf2
+Ee2 Md2 Ha2 Hh2 Db2 Dg2 Cc2 Cf2 Ra1 Rb1 Rc1 Rd1 Re1 Rf1 Rg1 Rh1
+EOM
+    }
+    else{
+      print <<EOM;
+ee7 md7 ha7 hh7 db7 dg7 cf8 cc8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8
+ha7 hh7 dg7 me7 ed7 cc8 cf8 da8 rb7 rc7 rf7 rb8 rd8 re8 rg8 rh8
+ee7 md7 ha7 hh7 db7 dg7 cf8 cc8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8
+me7 ed7 ha7 hh7 db7 dg7 cc8 cf8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8
+EOM
+    }
+  }
+  print "enter move: ";
+  $m = <STDIN>;
+  chomp $m;
+  if ($m =~ m/(quit|exit|bye|stop|end)/i){
+    catchSignal('USR1');
+    exit;
+  }
+  return $m;
+}
+
+sub showPosition{
+  local($p) = @_;
+
+#  $p =~ s/~/\n/gs;
+  watchLog("$p\n");
+}
+
+sub leaveGame{
+  local($s) = @_;
+  local(%p, %gd, $gsUrl, $gsCgi);
+
+  $gsUrl = $G{gsUrl};
+  $gsCgi = $G{gsCgi};
+  $p{sid} = $s;
+  $p{action} = "leave";
+  $p{auth} = $G{auth};
+  %gd = doPost("$gsUrl/$gsCgi", %p);
+  watchLog("leaving the game\n");
+
+  unlink "$C{runDir}/$G{gid}$G{side}.bot";
+  unlink $G{posFile};
+  unlink $G{moveFile};
+  unlink $G{gamestateFile};
+
+  return $gd{ok};
+}
+
+sub gameroomLogout{
+  local($s) = @_;
+  local($grUrl, %p, %r);
+
+  $grUrl = $G{grUrl};
+  $p{sid} = $s;
+  $p{action} = "leave";
+  %r = doPost("$grUrl/$G{grCgi}", %p);
+  watchLog("logging out of the gameroom\n");
+  return $r{ok};
+}
+
+sub getGame{
+  local($s, $against, $side) = @_;
+  local(%p, %r, $k, $v, %g, %c);
+  local($grUrl);
+
+  $grUrl = $G{grUrl};
+
+# If we've been asked to create a new game, create it
+#  if ($against eq "newgame"){
+  if ($against eq ""){
+    undef %p;
+    $p{sid} = $s;
+    $p{action} = "newGame";
+    $p{timecontrol} = $C{timecontrol};
+    $p{rated} = $C{rated};
+# xxxx
+    $p{side} = "b";
+    if ($side ne ""){ $p{side} = $side; }
+    %r = doPost("$grUrl/$G{grCgi}", %p);
+    ($k, $v) = each(%r);
+     %g = str2hash($v);
+    return %g;
+  }
+
+# First check if we are being asked to rejoin a game
+#   with this user.
+# if there are any games that we currently have going, join it
+#   if we are not already playing at that table.
+  undef %p;
+  $p{sid} = $s;
+  $p{what} = "myGames";
+  %r = doPost("$grUrl/$G{grCgi}", %p);
+  while(($k, $v) = each(%r)){
+    if ($k ne ""){
+      %g = str2hash($v);
+      $g{player} = lc($g{player});
+# 2005.01.24 Omar decided to allow playing postal games
+## we are not interested in no time limit or postal games
+#      if (($g{timecontrol} !~ m%0/0/0%) && ($g{timecontrol} !~ m/[dh]/)){
+# lets join this game
+        if ($against eq $g{player}){
+          if ($side eq ""){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+          elsif ($side eq $g{side}){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+        }
+        elsif ($against eq $g{gid}){
+          if ($side eq ""){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+          elsif ($side eq $g{side}){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+        }
+#      }
+    }
+  }
+
+# Check through the invited games to see if we have been
+#   invited by this player or if this game id is there.
+#   If we were given a side to play then skip this section.
+# Actually the bots will currently just ignore invites
+#   since if we accept them then the bot has to know how
+#   to play by the time control chosen by the user.
+#   So we mignt need a bot.cfg parameter to say if we
+#   can accept invites or not and maybe also a way to
+#   specify what timecontrols we will accept; maybe just
+#   a list of timecontrol strings.
+# Then the botman script does not need to do all this
+#   checking and just spawns a bot to handle any invite
+#   that it sees.  The bot will decide if it can be 
+#   accepted or not.
+
+# Check through the join games for this user or game id
+  undef %p;
+  $p{sid} = $s;
+  $p{what} = "join";
+  %r = doPost("$grUrl/$G{grCgi}", %p);
+  while(($k, $v) = each(%r)){
+    if ($k ne ""){
+      %g = str2hash($v);
+      $g{player} = lc($g{player});
+# 2005.01.24 Omar decided to allow playing postal games
+## we are not interested in no time limit or postal games
+#      if (($g{timecontrol} !~ m%0/0/0%) && ($g{timecontrol} !~ m/[dh]/)){
+# lets join this game
+        if ($against eq $g{player}){
+          if ($side eq ""){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+          elsif ($side eq $g{side}){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+        }
+        elsif ($against eq $g{gid}){
+          if ($side eq ""){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+          elsif ($side eq $g{side}){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+        }
+#      }
+    }
+  }
+}
+
+sub alreadyPlaying{
+  local($gid, $side) = @_;
+  local($bf, *FH, $pid, $res);
+
+  $bf = "$C{runDir}/$gid$side.bot";
+  open(FH, "<$bf");
+  $pid = <FH>;
+  close FH;
+  $pid =~ s/\D//g;
+  if ($pid eq ""){ return 0; }
+# kill CONT can be used to check if a process is running
+#   it returns a number > 0 if the process is running, but does
+#   not effect the process
+  $res = kill('CONT', $pid);
+  if ($res > 0){
+    watchLog("looks like we are already playing at $gid as $side");
+    watchLog("  as indicated by the file $C{runDir}/$gid$side.bot");
+    return 1;
+  }
+  return 0;
+}
+
+sub howManyBots{
+  local(@files, $f, $pid, $count);
+
+  @files = glob("$C{runDir}/*.bot");
+  foreach $f (@files){
+    open(FH, "<$f");
+    $pid = <FH>;
+    close FH;
+    $pid =~ s/\D//g;
+    if ($pid eq ""){ next; }
+    if (kill('CONT', $pid) > 0){ $count += 1; }
+  }
+  return($count);
+}
+
+
+sub doPost{
+  local($u, %p) = @_;
+  local($ua, $res, %res);
+  local($k, $v);
+  local($tries);
+
+postAgain:
+  $tries += 1;
+  logPost($u, %p);
+
+# Note that the request will timeout after 3 minutes
+#   if a response is not received
+#   http://perldoc.com/perl5.8.0/lib/LWP/UserAgent.html
+#     See the timeout parameter in the methods section of the above URL
+
+# wait (set to 0 or 1) and maxwait (set to number of seconds)
+#   are preset by the caller
+  if ($p{wait} > 0){
+# We set the client to wait for about 20 sec longer than what
+#    we tell the server we are going to be wait for
+    $ua = LWP::UserAgent->new(timeout => $p{maxwait} + 20);
+  }
+  else{
+    $ua = LWP::UserAgent->new;
+  }
+  $res = $ua->request(POST "$u", \%p);
+
+#  print $res->as_string;
+#  print $res->content();
+
+  %res = str2hash($res->content());
+
+  if ($res{timecontrol} ne ""){
+    $G{gamestate} = $res->content();
+  }
+
+  logResponse(%res);
+
+# If the response is empty then there was probably a network problem
+#   or a problem with the server. Pause for a while and try again.
+  if ($res->content() eq ""){
+    if ($tries < 6){
+      netLog("No response. Will try again in " . 10*$tries . " seconds.");
+      sleep(10*$tries);
+      goto postAgain;
+    }
+  }
+
+  if ($res{error}){
+    watchLog("$res{error}");
+    gameLog("$res{error}");
+    catchSignal('USR1');
+    exit;
+  }
+  return %res;
+}
+
+# Convert a string of the form:
+#    key1=val1\nkey2=val2\n....
+#    to a hash like $h{key1} = val1
+#    %13 in the value are converted to \n and %25 to %
+sub str2hash{
+  local($c) = @_;
+  local(@f, $f, $k, $v, %r);
+
+  @f = split(/\n/, $c);
+  foreach $f (@f){
+    ($k, $v) = ($f =~ m/^([^=]+)=(.*)/);
+    if ($k){
+# Do not change the order of these lines
+      $v =~ s/\%13/\n/gs;
+      $v =~ s/\%25/\%/gs;
+      $r{$k} = $v;
+    }
+  }
+  return %r;
+}
+
+sub logPost{
+  local($u ,%p) = @_;
+  local($k, $v);
+  local($t);
+
+  $t = localtime(time);
+  netLog("=== $u ====", 'nodate');
+  netLog("  POST at $t", 'nodate'); 
+  while(($k,$v) = each(%p)){
+    if ($k =~ m/password/i){ $v =~ s/\w/\*/g; }
+    netLog("    $k = $v", 'nodate');
+  }
+}
+
+sub logResponse{
+  local(%res) = @_;
+  local($k, $v);
+  local($t);
+
+  $t = localtime(time);
+  netLog("  RESPONSE at $t", 'nodate');
+  while(($k,$v) = each(%res)){
+    netLog("    $k = $v", 'nodate');
+  }
+}
+
+sub watchLog{
+  local($s, $nodate) = @_;
+  local(*FH, $t);
+
+# if set to 2 log to a file
+  if ($C{watch} == 2){
+    $t = "[" . localtime(time) . "] ";
+    if ($nodate){ $t = ""; }
+    open(FH, ">>$C{logDir}/$G{watchLog}");
+    print FH "$t$s\n";
+    close FH;
+    return;
+  }
+  if ($C{watch}){
+    print "$s\n";
+  }
+}
+
+sub netLog{
+  local($s, $nodate) = @_;
+  local(*FH, $t);
+
+  $t = "[" . localtime(time) . "] ";
+  if ($nodate){ $t = ""; }
+  if ($C{debug} && $G{netLog}){
+    open(FH, ">>$C{logDir}/$G{netLog}");
+    print FH "$t$s\n";
+    close FH;
+  }
+}
+
+sub gameLog{
+  local($s, $nt) = @_;
+  local(*FH, $t);
+
+  $t = localtime(time);
+  if ($C{saveGame} && $G{gameLog}){
+    open(FH, ">>$C{logDir}/$G{gameLog}");
+    if ($nt){
+      print FH "$s\n";
+    }
+    else{
+      print FH "[$t] $s\n";
+    }
+    close FH;
+  }
+}
+
+sub touchFile{
+  local($fn, $s) = @_;
+  local(*FH, $t);
+
+  open(FH, ">$fn");
+  print FH "$s\n";
+  close FH;
+}
+
+sub saveGame{
+  local(%gd) = @_;
+
+  if ($C{saveGame} && $G{gameLog}){
+    open(FH, ">>$C{logDir}/$G{gameLog}");
+    $gd{wplayer} =~ s/\W//g;
+    $gd{bplayer} =~ s/\W//g;
+    print FH "$gd{wplayer} vs $gd{bplayer}\n$gd{result}\n";
+    close FH;
+  }
+}
+
+sub parseArguments{
+  local($c, $a, $s);
+
+  $c = lc($ARGV[0]);
+  if ($c eq ""){
+    return('', 'b');
+  }
+  if ($c =~ m/[wb]/){
+    return('', $c);
+  }
+  if ($c =~ m/^play$/){
+    $a = lc($ARGV[1]); $s = lc($ARGV[2]);
+    return($a, $s);
+  }
+  if ($c =~ m/^move$/){
+    $a = lc($ARGV[1]); $s = lc($ARGV[2]);
+    $G{oneMove} = 1;
+    return($a, $s);
+  }
+  watchLog("command '$c' not understood");
+  netLog("command '$c' not understood");
+  gameLog("command '$c' not understood");
+  exit;
+}
+
+

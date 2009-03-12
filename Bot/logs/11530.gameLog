@@ -1,0 +1,5 @@
+[Wed Mar 11 20:24:52 2009] **** bot started ****
+[Wed Mar 11 20:25:45 2009] playing against erict.
+1w Ra1 Rb1 Rc1 Rd1 Re1 Rf1 Rg1 Rh1 Ha2 Db2 Cc2 Md2 Ee2 Cf2 Dg2 Hh2
+1b fn is ./running/pos11530ha7 hh7 dg7 me7 ed7 cc8 cf8 da8 rb7 rc7 rf7 rb8 rd8 re8 rg8 rh8
+[Wed Mar 11 20:25:57 2009] Gameserver: Bad Move: invalid number of steps in setup (17) fn is ./running/pos11530ha7 hh7 dg7 me7 ed7 cc8 cf8 da8 rb7 rc7 rf7 rb8 rd8 re8 rg8 rh8

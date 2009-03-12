@@ -1,0 +1,55 @@
+This bot interface kit contains everything you need to develop
+your own bot and have it play against other bots and humans in 
+the gameroom of the arimaa.com site.
+
+Start by using the sample bot that is provided in this kit and
+make sure that you can get it to connect to the Arimaa gameroom
+and play a game. It should only take a few minutes to do this.
+Once you have done that you can then replace the sample bot with 
+your own bot which hopefully plays much better.
+
+To run the sample bot in the Arimaa gameroom do the following:
+
+1. Creat an account for your Bot.
+   Go to http://arimaa.com/arimaa/gameroom/botinfo.cgi
+   Pick a cool name for your bot. Arimaazilla and ShallowBlue
+   are already taken :-)
+
+2. Edit the bot.cfg file and enter the login and password that
+   you selected when creating the account for your bot.
+   Also if you are on a Windows box set the getMove variable
+   properly as mentioned in the bot.cfg file.
+
+3. Make sure you have Perl and the LWP and HTTP modules installed.
+   If you are on a Windows box see the README.windows file
+   for instructions on installing Perl.
+   If you are on a Linux box and don't have LWP or HTTP installed
+   you can get them from:
+     http://www.cpan.org/modules/by-module/LWP/
+     http://www.cpan.org/modules/by-module/HTTP/
+
+4. Run the 'bot' script.
+   You should be able to login to the Arimaa gameroom and
+   play against your bot.
+
+
+Here is how it works:
+
+The bot script connects to the Arimaa gameroom using the login 
+info provided in the bot.cfg file. It creates a new game and 
+waits for someone to join. When the bot needs to make a move the 
+bot script runs a program called 'getMove' and pass the game position
+file to it on the command line. The getMove program reads this 
+file and prints the move it wants to make to standard output. 
+The bot script reads the output of getMove and posts the move 
+to the Arimaa gameroom.
+
+So to develop your own bot you only need to create a getMove program
+to replace the sample one.  The getMove program can be written in 
+any language you want. See the README.getMove file for more info.
+
+To have your bot stay logged into the Arimaa gameroom and play
+continously, see the README.bot file.
+
+
+

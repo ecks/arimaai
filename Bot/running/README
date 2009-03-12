@@ -1,0 +1,5 @@
+Files to record the process id and what game they are playing
+will be written in this directory
+
+<game id><side>.bot  -  file contains the process id
+

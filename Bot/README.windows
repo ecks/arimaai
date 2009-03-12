@@ -1,0 +1,9 @@
+On the Windows platform the bot was tested with the
+ActiveState version of Perl.  This has the required
+modules build in it so you don't need to install them
+seperately.  You can download ActiveState Perl from:
+
+http://activestate.com/Products/Download/Download.plex?id=ActivePerl
+
+Get the most latest version for Windows with the MSI installer.
+

@@ -1,0 +1,34 @@
+To develop your own bot you simply need to create a program
+that reads the current game position and prints to standard
+output the move that it wants to make. The program can be
+written in any language you want. This program is reffered
+to as getMove.
+
+The 'bot' script calls getMove when the bot needs to make a
+move. The getMove program is called as follows:
+  $C{getMove} positionFile moveFile gamestateFile
+
+The variable $C{getMove} is defined in the bot.cfg file. By
+default it is set to 'getMove', but if needed you can change
+it to another name or add options when it is called.
+
+The positionFile is the first command line argument and
+is a file that contains the current game position. The format
+of this file is defined near the bottom of this web page:
+  http://arimaa.com/arimaa/learn/notation.html
+In most cases this is the only file you need to read to
+develop a simple bot.
+
+The moveFile is the second command line argument and
+is a file that contains the list of moves that have been
+made so far. The format of this file is defined at the
+top of this web page:
+  http://arimaa.com/arimaa/learn/notation.html
+
+The gamestateFile is the third command line argument and
+is a file that contains various parameters about the
+game. The format of this file is defined in README.gamestate.
+
+
+
+

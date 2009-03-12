@@ -1,0 +1,992 @@
+#!/usr/bin/perl
+
+# Be sure to read the README.1st file to get started.
+#   You do not need to change anything in this file.
+#   Edit the bot.cfg file instead.
+
+# If you dont have these perl modules you can get them from
+#   http://www.cpan.org/modules/by-module/LWP/
+#   http://www.cpan.org/modules/by-module/HTTP/
+use LWP;
+use LWP::Simple;
+use HTTP::Request::Common;
+
+require "./bot.cfg";
+
+$G{grCgi} = "bot1gr.cgi";
+$G{netLog} = "botman.netLog";
+
+# These are not used
+$G{gameLog} = "botman.gameLog";
+$G{posFile} = "$C{runDir}/pos$$";
+$G{movFile} = "$C{runDir}/mov$$";
+
+# Force maxBots to 1 on windows
+$C{maxBots} = 1;
+
+if ($ARGV[0] =~ m/(stop|stopall)/i){
+  print "use 'botman stop' instead of botmanwin\n";
+  exit;
+}
+
+#if ($ARGV[0] !~ m/(start|stop|stopall)/i){
+#  watchLog("usage:\n    botman (start,stop,stopall)");
+#  watchLog("Read the botman section of README.bot before using");
+#  exit;
+#}
+
+# Check to make sure another botman is not already running
+#stopAlreadyRunning();
+
+# Login to the gameroom to get our session id
+$G{grSid} = gameroomLogin($C{grUrl}, $C{login}, $C{passwd});
+
+sleep(1);
+
+if ($ARGV[0] =~ m/^stop$/i){
+  print "use 'botman stop'\n";
+  exit;
+#  cancelOpenGames();
+#sleep(1);
+#  gameroomLogout();
+#  exit;
+}
+
+if ($ARGV[0] =~ m/^stopall$/i){
+  print "use 'botman stop'\n";
+  exit;
+#  cancelOpenGames();
+#sleep(1);
+#  gameroomLogout();
+#sleep(1);
+#  killBots();
+#  exit;
+}
+
+if ($ARGV[0] =~ m/^postal$/i){
+  playPostalGames();
+  exit;
+}
+
+# Make sure that the bot is not setup for client mode
+if ($C{client}){
+  watchLog("bots are setup for client mode. Set client=0 in the bot.cfg file");
+  exit;
+}
+
+# Start bots to play the games already in sessions. The bot will
+#   exit if another bot is already serving the game.
+#playCurrentGames();
+#sleep(1);
+
+while(1){
+
+# Setup a open game; pick a side randomly
+
+print "about to start a new game\n";
+  unlink(<$C{runDir}/*.bot>);
+
+  setupOpenGames($G{grSid});
+
+#  if ($C{maxBots} != 1){
+#    sleep(30);
+#  }
+
+# Not used any more
+## Wait for a game to start
+#  ($gid, $side) = waitForOpponent($G{grSid});
+#
+#
+## Start a bot to play the game
+#  if (($gid ne "") && ($side ne "")){
+#    system("$C{bot} play $gid $side > $C{runDir}/bot.out &");
+#netLog("started a bot to handle $gid $side");
+#  }
+
+}
+
+sub killBots{
+  local(@files, $f);
+  local($gid, $side);
+
+  watchLog("stopping the bots");
+  @files = glob("$C{runDir}/*.bot");
+  foreach $f (@files){
+    ($gid, $side) = ($f =~ m/(\d+)([wb])\.bot$/);
+    stopBot($gid, $side);
+
+#    open(FH, "<$f");
+#    $pid = <FH>;
+#    close FH;
+#    $pid =~ s/\D//g;
+#    if (($pid>0) && (getpgrp($pid)>0)){
+#      watchLog("    asking bot pid=$pid, to stop nicely");
+#      kill('HUP', $pid);
+#      sleep(2);
+#      if (getpgrp($pid)>0){
+#        watchLog("        it doesn't want to stop. let's try another way, shall we :-)");
+#        kill('KILL', $pid);
+#        sleep(2);
+#        if (getpgrp($pid)>0){
+#          watchLog("        looks like it's following directions now.");
+#        }
+#        else{
+#          watchLog("  ***   you might need to check on this one");
+#          next; # so that we dont delete the pid file
+#        }
+#      }
+#    }
+#    unlink($f);
+  }
+}
+
+sub cancelOpenGames(){
+  local(%p, %r, %c, $k, $v, %g);
+
+  watchLog("canceling open games; hope no one is trying to sit as we do this");
+  $p{sid} = $G{grSid};
+  $p{what} = "myGames";
+  %r = doPost("$G{grUrl}/$G{grCgi}", %p);
+  while(($k, $v) = each(%r)){
+    if ($k ne ""){
+      %g = str2hash($v);
+# found our open game
+      if ($g{player} eq ""){
+        watchLog("    canceling game $g{gid} by stoping the bot");
+# first try to tell the bot that is playing the game to exit;
+#   the bot will take care of clearing out the open game.
+        stopBot($g{gid}, $g{side});
+      }
+    }
+  }
+  sleep(1);
+# now double check that the games have been cancled
+  undef %p;
+  $p{sid} = $G{grSid};
+  $p{what} = "myGames";
+  %r = doPost("$G{grUrl}/$G{grCgi}", %p);
+  while(($k, $v) = each(%r)){
+    if ($k ne ""){
+      %g = str2hash($v);
+# found our open game
+      if ($g{player} eq ""){
+        watchLog("    canceling game $g{gid} from the game room");
+        undef %p;
+        $p{sid} = $G{grSid};
+        $p{action} = "cancelOpenGame";
+        $p{gameid} = $g{gid};
+        %c = doPost("$G{grUrl}/$G{grCgi}", %p);
+      }
+    }
+  }
+}
+
+sub stopBot{
+  local($gid, $side) = @_;
+  local($bf, *FH, $pid, $res);
+
+  $bf = "$C{runDir}/$gid$side.bot";
+  open(FH, "<$bf");
+  $pid = <FH>;
+  close FH;
+  $pid =~ s/\D//g;
+  if ($pid eq ""){ return 0; }
+# kill CONT can be used to check if a process is running
+#   it returns a number > 0 if the process is running, but does
+#   not effect the process
+  if (($pid>0) && (kill('CONT', $pid)>0)){
+    watchLog("    asking bot pid=$pid, to stop nicely");
+    kill('HUP', $pid);
+    sleep(5);
+    if (kill('CONT',$pid)>0){
+      watchLog("        it doesn't want to stop. let's try another way, shall we :-)");
+      kill('KILL', $pid);
+      sleep(3);
+      if (kill('CONT',$pid)>0){
+        watchLog("  ***   you might need to check on this one");
+        next; # so that we dont delete the pid file
+      }
+      else{
+        watchLog("        looks like it's following directions now.");
+      }
+    }
+  }
+  unlink($bf);
+}
+
+sub playPostalGames{
+  local(%p, %r, $k, $v, %g);
+  local(%gs, $gsSid, $anyGames);
+  my($st, $et);
+
+  $anyGames = 1;
+  while($anyGames){
+    watchLog("checking for our postal games.");
+    $p{sid} = $G{grSid};
+    $p{what} = "myGames";
+    %r = doPost("$G{grUrl}/$G{grCgi}", %p);
+    $anyGames = "";
+    $st = time;
+    while(($k, $v) = each(%r)){
+      if ($k ne ""){
+        %g = str2hash($v);
+# found our game in session
+        if ($g{postal}){
+          $anyGames = 1;
+          if ($g{player} ne ""){
+            watchLog("    starting bot for game id=$g{gid}");
+            if ($C{maxBots} == 1){
+              system("$C{bot} move $g{gid} $g{side}");
+            }
+            else{
+              system("$C{bot} move $g{gid} $g{side} > $C{runDir}/bot.out &");
+            }
+          }
+        }
+      }
+    }
+# Wait for at least 10 minutes before checking the games again
+    if ($anyGames){
+      $et = time;
+      while (($et - $st) < 10*60){
+        sleep(10);
+        $et = time;
+      }
+    }
+  }
+}
+
+sub playCurrentGames{
+  local(%p, %r, $k, $v, %g);
+  local(%gs, $gsSid);
+
+  watchLog("starting bots for our current games; they will exit if needed.");
+  $p{sid} = $G{grSid};
+  $p{what} = "myGames";
+  %r = doPost("$G{grUrl}/$G{grCgi}", %p);
+  while(($k, $v) = each(%r)){
+    if ($k ne ""){
+      %g = str2hash($v);
+# found our game in session
+      if ($g{player} ne ""){
+        watchLog("    starting bot for game id=$g{gid}");
+        if ($C{maxBots} == 1){
+          system("$C{bot} play $g{gid} $g{side}");
+        }
+        else{
+          system("$C{bot} play $g{gid} $g{side} > $C{runDir}/bot.out &");
+        }
+      }
+    }
+  }
+}
+
+sub setupOpenGames{
+  local(%p, %r, $k, $v, %g);
+  local(%gs, $gsSid);
+  local($isOpen);
+
+# check if we already have an open game, if not then
+#   open a new one; randomly pick a side to play
+  $p{sid} = $G{grSid};
+  $p{what} = "myGames";
+  %r = doPost("$G{grUrl}/$G{grCgi}", %p);
+
+  while(($k, $v) = each(%r)){
+    if ($k ne ""){
+      %g = str2hash($v);
+# found our open game
+      if (($g{gid} > 0) && ($g{player} eq "")){
+        $isOpen = 1;
+        watchLog("    starting bot for game id=$g{gid}");
+        if ($C{maxBots} == 1){
+          system("$C{bot} play $g{gid} $g{side}");
+        }
+        else{
+          system("$C{bot} play $g{gid} $g{side} > $C{runDir}/bot.out &");
+        }
+      }
+    }
+  }
+  if ($isOpen eq ""){
+    $G{mySide} = getMySide();
+    if ($G{mySide} eq 'b'){
+      watchLog("starting bot to open a new game; side=b");
+      if ($C{maxBots} == 1){
+        system("$C{bot} b");
+      }
+      else{
+        system("$C{bot} b > $C{runDir}/bot.out &");
+        $G{bGid} = 1;
+      }
+    }
+    else{
+      watchLog("starting bot to open a new game; side=w");
+      if ($C{maxBots} == 1){
+        system("$C{bot} w");
+      }
+      else{
+        system("$C{bot} w > $C{runDir}/bot.out &");
+        $G{wGid} = 1;
+      }
+    }
+  }
+
+#  if ($G{wGid} eq ""){
+#    undef %p;
+#    $p{sid} = $G{grSid};
+#    $p{action} = "newGame";
+#    $p{timecontrol} = $C{timecontrol};
+#    $p{rated} = $C{rated};
+#    $p{side} = "w";
+#    %r = doPost("$G{grUrl}/$G{grCgi}", %p);
+#    ($k, $v) = each(%r);
+#    %g = str2hash($v);
+#    $G{wGid} = $g{gid};
+#  }
+#  if ($G{bGid} eq ""){
+#    undef %p;
+#    $p{sid} = $G{grSid};
+#    $p{action} = "newGame";
+#    $p{timecontrol} = $C{timecontrol};
+#    $p{rated} = $C{rated};
+#    $p{side} = "b";
+#    %r = doPost("$G{grUrl}/$G{grCgi}", %p);
+#    ($k, $v) = each(%r);
+#    %g = str2hash($v);
+#    $G{bGid} = $g{gid};
+#  }
+}
+
+# not used anymore
+#sub waitForOpponent{
+#  local(%p, %r, $k, $v, %g);
+#  local($anyOpen);
+#
+#  while(1){
+#    undef %p;
+#    $p{sid} = $G{grSid};
+#    $p{what} = "myGames";
+#    %r = doPost("$G{grUrl}/$G{grCgi}", %p);
+#    while(($k, $v) = each(%r)){
+#      if ($k ne ""){
+#        %g = str2hash($v);
+## we are not interested in no time limit or postal games
+#        if (($g{timecontrol} !~ m%0/0/0%) && ($g{timecontrol} !~ m/[dh]/)){
+## found our open game
+#          if (($g{gid} eq $G{wGid}) && ($g{player} ne "")){
+#            $G{wGid} = "";
+#            return($g{gid}, $g{side});
+#          }
+#          if (($g{gid} eq $G{bGid}) && ($g{player} ne "")){
+#            $G{bGid} = "";
+#            return($g{gid}, $g{side});
+#          }
+#        }
+#      }
+#    }
+#    sleep 15;
+#    if (($G{wGid} eq "") || ($G{bGid} eq "")){
+#      return('', '');
+#    }
+#  }
+#}
+
+
+# seems like signals get passed down to the children processes,
+#   but we want to be able to stop botman without having
+#   the bot processes it spawned stopping, so we use the TERM
+#   signal to stop botman and the HUP signal to stop bots
+
+sub stopAlreadyRunning{
+  local($bmf, $pid);
+
+  watchLog("checking to see if another botman process is already running");
+  $bmf = "$C{runDir}/botman.pid";
+  open(FH, "<$bmf");
+  $pid = <FH>;
+  chomp $pid;
+  close FH;
+  if (($pid>0) && (kill('CONT',$pid)>0)){
+    watchLog("  stopping it, pid=$pid, in a nice way.");
+    kill('TERM', $pid);
+    sleep(2);
+    if (kill('CONT',$pid)>0){
+      watchLog("  won't stop, gotta use force ;-).");
+      kill('KILL', $pid);
+      sleep(2);
+      if (kill('CONT',$pid)>0){
+        watchLog("  I can't seem to stop it. Giving up.");
+        exit;
+      }
+      else{
+        watchLog("  yep, that did it.");
+        sleep(1);
+      }
+    }
+  }
+  
+  open(FH, ">$bmf");
+  print FH "$$\n";
+  close FH;
+}
+
+exit;
+
+
+# This is so that if the process is terminated
+#   we can properly leave the game.
+setSignals();
+
+# 1 Login to the gameroom to get our session id 
+#   and also the names of the Post and Get scripts
+$G{grSid} = gameroomLogin($C{grUrl}, $C{login}, $C{passwd});
+
+# 2 Find the game to play or wait for one
+$G{gsSid} = findGame($G{grSid}, $playAgainst, $playSide);
+
+# 3 Play the game
+if ($G{gsSid}){
+  $res = playGame($G{gsSid});
+}
+
+# 4 Leave the table
+if ($G{gsSid}){
+  leaveGame($G{gsSid});
+}
+
+# 5 Logout of the gameroom; actually we don't
+#   need to do this, botman will take care of it
+#gameroomLogout($G{grSid});
+
+exit;
+
+sub setSignals{
+  $SIG{'HUP'} = \&catchSignal;
+  $SIG{'INT'} = \&catchSignal;
+  $SIG{'QUIT'} = \&catchSignal;
+  $SIG{'ABRT'} = \&catchSignal;
+  $SIG{'TERM'} = \&catchSignal;
+  $SIG{'USR1'} = \&catchSignal;
+  $SIG{'USR2'} = \&catchSignal;
+}
+
+sub catchSignal{
+  local($sig) = @_;
+
+# We can check for type of signal here if needed
+#   like: if ($sig eq "HUP"){
+  if ($G{gsSid}){ 
+    leaveGame($G{gsSid});
+    unlink "$C{runDir}/$G{gid}$G{side}.bot";
+    unlink $G{posFile};
+    unlink $G{movFile};
+  }
+  exit;
+}
+
+sub gameroomLogin{
+  local($url, $login, $passwd) = @_;
+  local(%p, %r, $s);
+
+  $p{username} = $login;
+  $p{password} = $passwd;
+  $p{action} = "login";
+  %r = doPost("$url/$G{grCgi}", %p);
+  $s = $r{sid};
+  $G{grUrl} = $url;
+  $G{grSid} = $r{sid};
+  if ($s){
+    watchLog("logged into the gameroom as $login sid=$s");
+  }
+  else{
+  }
+  return($s);
+}
+
+
+sub findGame{
+  local($s, $against, $side) = @_;
+  local($url, %g, %gs);
+
+  $url = $G{grUrl};
+
+  %g = getGame($s, $against, $side);
+  if ($g{gid} eq ""){ return; }
+  %gs = reserveSeat($url, $s, $g{gid}, $g{side});
+  $G{gsSid} = sitDown(%gs);
+  if ($G{gsSid}){
+    $G{side} = $g{side};
+    $G{gid} = $g{gid};
+    touchFile("$C{runDir}/$G{gid}$G{side}.bot", "$$");
+  }
+  if ($G{gsSid}){
+    if ($g{player} eq ""){
+      watchLog("Created game gid=$g{gid} side=$g{side}; waiting for opponent");
+    }
+    else{
+      watchLog("Joined game gid=$g{gid} side=$g{side}; against $g{player}");
+    }
+  }
+  return $G{gsSid};
+}
+
+
+# Reserve our seat in the game
+sub reserveSeat{
+  local($url, $s, $gid, $side) = @_;
+  local(%p, %gs, $grPost);
+
+  $p{sid} = $s;
+  $p{action} = "reserve";
+  $p{gid} = $gid;
+  $p{side} = $side;
+  %gs = doPost("$url/$G{grCgi}", %p);
+  return %gs;
+}
+
+sub sitDown{
+  local(%gs) = @_;
+  local(%p, %r, $gsUrl, $gsCgi, $s);
+
+  $gsUrl = $gs{base};
+  $gsCgi = $gs{cgi};
+  $p{sid} = $gs{tid};
+  $p{grid} = $gs{grid};
+  $p{action} = "sit";
+  %r = doPost("$gsUrl/$gsCgi", %p);
+  $s = $r{sid};
+  $G{gsUrl} = $gsUrl;
+  $G{gsCgi} = $gsCgi;
+  return $s;
+}
+
+sub playGame{
+  local($s) = @_;
+  local(%gd, $move, $mySide, $opSide, $opPlayer);
+  local($repWho, $iWon, $gotMove);
+
+  $mySide = $G{side};
+  $opSide = ($mySide eq 'w')?'b':'w';
+  $opPlayer = $opSide . "player";
+  %gd = getGameState($s);
+  while($gd{result} eq ""){
+    while(($gd{result} eq "") && (($gd{turn} eq "") || ($gd{turn} ne $mySide))){
+# a seperate process can be started here so that
+#   we can think while waiting for our turn
+      %gd = getGameState($s, "wait");
+      if (($repWho eq '') && ($gd{$opPlayer} ne '')){
+        $gd{$opPlayer} =~ s/\W//g;
+        watchLog("playing against $gd{$opPlayer}");
+        $repWho = 1;
+      }
+    }
+    if (($repWho eq '') && ($gd{$opPlayer} ne '')){
+      $gd{$opPlayer} =~ s/\W//g;
+      watchLog("playing against $gd{$opPlayer}");
+      $repWho = 1;
+    }
+    $gotMove = $gd{moves};
+    ($gotMove) = ($gotMove =~ m/\b\d+$opSide ([^\n]+)\n[^\n]*$/s);
+    watchLog("got move $gotMove");
+    showPosition($gd{position});
+    if ($gd{result} eq ""){
+      if ($C{client}){
+        $move = getUserMove(%gd);
+      }
+      else{
+        $move = getMove(%gd);
+        watchLog("my move is $move");
+        sleep int(rand(2)+1);
+      }
+      postMove($s, $move);
+      %gd = getGameState($s);
+      showPosition($gd{position});
+    }
+  }
+  $iWon = ($gd{result} =~ m/^$mySide/i)?'I won':'I lost';
+  watchLog("game over, $iWon, result:$gd{result}");
+  saveGame(%gd);
+  return $gd{result};
+}
+
+sub getGameState{
+  local($s, $w) = @_;
+  local(%p, %gd, $gsUrl, $gsCgi);
+
+  $gsUrl = $G{gsUrl};
+  $gsCgi = $G{gsCgi};
+  if ($G{lastchange} eq ""){ $G{lastchange} = 0; }
+  $p{sid} = $s;
+  $p{what} = "gamestate";
+  $p{wait} = 0;
+  if ($w){ $p{wait} = 1; }
+  $p{lastchange} = $G{lastchange};
+  %gd = doPost("$gsUrl/$gsCgi", %p);
+  $G{lastchange} = $gd{lastchange};
+  $G{auth} = $gd{auth};
+  return %gd;
+}
+
+sub postMove{
+  local($s, $m) = @_;
+  local(%p, %gd, $gsUrl, $gsCgi);
+
+  $gsUrl = $G{gsUrl};
+  $gsCgi = $G{gsCgi};
+  $p{sid} = $s;
+  $p{action} = "move";
+  $p{move} = $m;
+  if ($m =~ m/resign/i){
+    $p{action} = "resign";
+    $p{move} = "";
+  }
+  $p{auth} = $G{auth};
+  %gd = doPost("$gsUrl/$gsCgi", %p);
+  return $gd{ok};
+}
+
+sub getMove{
+  local(%gd) = @_;
+  local(*FH, $move);
+  local($pf, $mf);
+
+  $pf = $G{posFile};
+  $mf = $G{movFile};
+
+  open(FH, ">$pf");
+  print FH $gd{position};
+  close FH;
+
+  open(FH, ">$mf");
+  print FH $gd{moves};
+  close FH;
+
+  $move = `getMove $pf $mf`;
+  $move =~ s/\n//g;
+  return $move;
+}
+
+# This is used if $C{client}=1
+sub getUserMove{
+  local(%gd) = @_;
+  local($m);
+
+  if ($gd{plycount} == 1){
+    print "some common setups\n";
+    if ($gd{turn} eq "w"){
+      print <<EOM;
+Ee2 Md2 Ca1 Dc2 Hb2 Hg2 Ch1 Df2 Rb1 Rc1 Rd1 Re1 Rf1 Rg1 Ra2 Rh2
+Ee2 Md2 Da1 Hb2 Dh1 Hg2 Cf1 Cc1 Rb1 Rd1 Re1 Rg1 Ra2 Rc2 Rf2 Rh2
+Ee2 Md2 Hh2 Dg2 Db1 Ca2 He1 Cf1 Ra1 Rc1 Rd1 Rg1 Rh1 Rb2 Rc2 Rf2
+Ee2 Md2 Ha2 Hh2 Db2 Dg2 Cc2 Cf2 Ra1 Rb1 Rc1 Rd1 Re1 Rf1 Rg1 Rh1
+EOM
+    }
+    else{
+      print <<EOM;
+ee7 md7 ha7 hh7 db7 dg7 cf8 cc8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8
+ha7 hh7 dg7 me7 ed7 cc8 cf8 da8 rb7 rc7 rf7 rb8 rd8 re8 rg8 rh8
+ee7 md7 ha7 hh7 db7 dg7 cf8 cc8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8
+me7 ed7 ha7 hh7 db7 dg7 cc8 cf8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8
+EOM
+    }
+  }
+  print "enter move: ";
+  $m = <STDIN>;
+  chomp $m;
+  if ($m =~ m/(quit|exit|bye|stop|end)/i){
+    catchSignal('USR1');
+    exit;
+  }
+  return $m;
+}
+
+sub showPosition{
+  local($p) = @_;
+
+#  $p =~ s/~/\n/gs;
+  watchLog("$p\n");
+}
+
+sub leaveGame{
+  local($s) = @_;
+  local(%p, %gd, $gsUrl, $gsCgi);
+
+  $gsUrl = $G{gsUrl};
+  $gsCgi = $G{gsCgi};
+  $p{sid} = $s;
+  $p{action} = "leave";
+  $p{auth} = $G{"auth"};
+  %gd = doPost("$gsUrl/$gsCgi", %p);
+  watchLog("leaving the game\n");
+  return $gd{ok};
+}
+
+sub gameroomLogout{
+  local($s) = @_;
+  local($grUrl, %p, %r);
+
+  $grUrl = $G{grUrl};
+  $p{sid} = $G{grSid};
+  $p{action} = "leave";
+  %r = doPost("$grUrl/$G{grCgi}", %p);
+  watchLog("logging out of the gameroom\n");
+  return $r{ok};
+}
+
+
+sub getGame{
+  local($s, $against, $side) = @_;
+  local(%p, %r, $k, $v, %g);
+  local($grUrl);
+
+  $grUrl = $G{grUrl};
+
+# If we've been asked to create a new game, create it
+#  if ($against eq "newgame"){
+  if ($against eq ""){
+    undef %p;
+    $p{sid} = $s;
+    $p{action} = "newGame";
+    $p{timecontrol} = $C{timecontrol};
+    $p{rated} = $C{rated};
+    $p{side} = "b";
+    if ($side ne ""){ $p{side} = $side; }
+    %r = doPost("$grUrl/$G{grCgi}", %p);
+    ($k, $v) = each(%r);
+     %g = str2hash($v);
+    return %g;
+  }
+
+# First check if we are being asked to rejoin a game
+#   with this user.
+# if there are any games that we currently have going, join it
+#   if we are not already playing at that table.
+  undef %p;
+  $p{sid} = $s;
+  $p{what} = "myGames";
+  %r = doPost("$grUrl/$G{grCgi}", %p);
+  while(($k, $v) = each(%r)){
+    if ($k ne ""){
+      %g = str2hash($v);
+# we are not interested in no time limit or postal games
+      if (($g{timecontrol} !~ m%0/0/0%) && ($g{timecontrol} !~ m/[dh]/)){
+# lets join this game
+        if ($against eq $g{player}){
+          if ($side eq ""){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+          elsif ($side eq $g{side}){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+        }
+        elsif ($against eq $g{gid}){
+          if ($side eq ""){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+          elsif ($side eq $g{side}){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+        }
+      }
+    }
+  }
+
+# Check through the invited games to see if we have been
+#   invited by this player or if this game id is there
+
+# Check through the join games for this user or game id
+  undef %p;
+  $p{sid} = $s;
+  $p{what} = "join";
+  %r = doPost("$grUrl/$G{grCgi}", %p);
+  while(($k, $v) = each(%r)){
+    if ($k ne ""){
+      %g = str2hash($v);
+# we are not interested in no time limit or postal games
+      if (($g{timecontrol} !~ m%0/0/0%) && ($g{timecontrol} !~ m/[dh]/)){
+# lets join this game
+        if ($against eq $g{player}){
+          if ($side eq ""){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+          elsif ($side eq $g{side}){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+        }
+        elsif ($against eq $g{gid}){
+          if ($side eq ""){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+          elsif ($side eq $g{side}){ 
+            if (! alreadyPlaying($g{gid}, $g{side})){ return(%g); }
+          }
+        }
+      }
+    }
+  }
+}
+
+sub alreadyPlaying{
+  local($gid, $side) = @_;
+
+  if (-e "$C{runDir}/$gid$side.bot"){
+    watchLog("looks like we are already playing at $gid as $side");
+    watchLog("  as indicated by the file $C{runDir}/$gid$side.bot");
+    return 1;
+  }
+  return 0;
+}
+
+
+sub doPost{
+  local($u, %p) = @_;
+  local($ua, $res, %res);
+  local($k, $v);
+
+  logPost($u, %p);
+
+  $ua = LWP::UserAgent->new;
+  $res = $ua->request(POST "$u", \%p);
+
+  %res = str2hash($res->content());
+
+  logResponse(%res);
+
+  if ($res{error}){
+#    watchLog("$res{error}");
+  }
+  return %res;
+}
+
+# Convert a string of the form:
+#    key1=val1\nkey2=val2\n....
+#    to a hash like $h{key1} = val1
+#    %13 in the value are converted to \n and %25 to %
+sub str2hash{
+  local($c) = @_;
+  local(@f, $f, $k, $v, %r);
+
+  @f = split(/\n/, $c);
+  foreach $f (@f){
+    ($k, $v) = ($f =~ m/^([^=]+)=(.*)/);
+    if ($k){
+# Do not change the order of these lines
+      $v =~ s/\%13/\n/gs;
+      $v =~ s/\%25/\%/gs;
+      $r{$k} = $v;
+    }
+  }
+  return %r;
+}
+
+sub logPost{
+  local($u ,%p) = @_;
+  local($k, $v);
+
+  netLog("=== $u ====", 'nodate');
+  netLog("  POST", 'nodate'); 
+  while(($k,$v) = each(%p)){
+    netLog("    $k = $v", 'nodate');
+  }
+}
+
+sub logResponse{
+  local(%res) = @_;
+  local($k, $v);
+
+  netLog("  RESPONSE", 'nodate');
+  while(($k,$v) = each(%res)){
+    netLog("    $k = $v", 'nodate');
+  }
+}
+
+sub watchLog{
+  local($s) = @_;
+
+  if ($C{watch}){
+    print "$s\n";
+  }
+}
+
+sub netLog{
+  local($s, $nodate) = @_;
+  local(*FH, $t);
+
+  $t = "[" . localtime(time) . "] ";
+  if ($nodate){ $t = ""; }
+  if ($C{debug} && $G{netLog}){
+    open(FH, ">>$C{logDir}/$G{netLog}");
+    print FH "$t$s\n";
+    close FH;
+  }
+}
+
+sub gameLog{
+  local($s) = @_;
+  local(*FH, $t);
+
+  $t = localtime(time);
+  if ($C{saveGame} && $G{gameLog}){
+    open(FH, ">>$C{logDir}/$G{gameLog}");
+    print FH "[$t] $s\n";
+    close FH;
+  }
+}
+
+sub getMySide{
+  local(*FH, $s, $fn);
+
+  $fn = "$C{runDir}/mySide";
+  open(FH, "<$fn");
+  $s = <FH>;
+  close FH;
+  $s = ($s eq 'b')?'w':'b';
+  open(FH, ">$fn");
+  print FH "$s";
+  close FH;
+  return $s;
+}
+
+sub touchFile{
+  local($fn, $s) = @_;
+  local(*FH, $t);
+
+  open(FH, ">$fn");
+  print FH "$s\n";
+  close FH;
+}
+
+sub saveGame{
+  local(%gd) = @_;
+
+  if ($C{saveGame} && $G{gameLog}){
+    open(FH, ">>$C{logDir}/$G{gameLog}");
+    $gd{wplayer} =~ s/\W//g;
+    $gd{bplayer} =~ s/\W//g;
+    print FH "$gd{wplayer} vs $gd{bplayer}\n$gd{moves}\n$gd{result}\n";
+    close FH;
+  }
+}
+
+sub parseArguments{
+  local($c, $a, $s);
+
+  $c = lc($ARGV[0]);
+  if ($c eq ""){
+    return('', 'b');
+  }
+  if ($c =~ m/[wb]/){
+    return('', $c);
+  }
+  if ($c =~ m/^play$/){
+    $a = lc($ARGV[1]); $s = lc($ARGV[2]);
+    return($a, $s);
+  }
+  watchLog("command '$c' not understood");
+  netLog("command '$c' not understood");
+  gameLog("command '$c' not understood");
+  exit;
+}
+
+

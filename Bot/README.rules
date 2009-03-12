@@ -1,0 +1,40 @@
+The following are rules for how bots should behave.
+
+1. A bot may not injure a human being or, through inaction, 
+   allow a human being to come to harm.
+
+2. A bot must obey orders given it by human beings except 
+   where such orders would conflict with the First Law.
+
+3. A bot must protect its own existence as long as such 
+   protection does not conflict with the First or Second Law. 
+
+Actually these are Isaac Asimov's "Three Laws of Robotics",
+but they are good to know for anyone who builds any kind
+of agents physical or functional that interact with us
+fragile humans :-)
+
+OK back to work.
+Your bot must conform to the following behavior requirements.
+
+1. Bots should not join open games against humans.  They can
+   join open games against other bots.  They should only accept
+   invited games or open new games and wait for someone to join.
+   So don't try something like:
+     bot play susan
+   Won't work anyways cause the gameroom enforces it.
+   But you can do this:
+     bot play bot_Arimaazilla
+   and join a game that was opened by another bot.
+2. Bots should always give a starting chat message to let the
+   opponent know that they are playing a bot and give the name and
+   email address of the person in charge of the bot.  For example:
+     Don't try to chat with me since I am a bot.
+     My creator is Joe Smith joe_smith99@yahoo.com
+   You can set this message in the bot.cfg file.
+3. The username of bots should begin with bot_, so that people
+   can easily distinguish bots from other people.  When you create
+   the bot account keep this in mind.
+
+
+

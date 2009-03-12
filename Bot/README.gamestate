@@ -1,0 +1,140 @@
+You really don't need to use the info in the gamestate
+file, until you get to the point of wanting to allow
+your bot to think while it is the opponents turn,
+taking into consideration how much time there is left
+in the game, automatically handle takeback requests
+and other such things.
+
+The format of the gamestate file is just key=value
+pairs, one per line.  So a new line '\n' seperates
+one pair from the next. The values are modified so
+that all '%' chars are replaced with the string "%25"
+and all '\n' chars are replaced with "%13"; in that
+order.
+
+Here is a perl routine that takes the content of
+a gamestate file (stored in one big string) and
+turns it into an an associtive array.
+
+# Convert a string of the form:
+#    key1=val1\nkey2=val2\n....
+#    to a hash like $h{key1} = val1
+#    %13 in the value are converted to \n and %25 to %
+sub str2hash{
+  local($c) = @_;
+  local(@f, $f, $k, $v, %r);
+
+  @f = split(/\n/, $c);
+  foreach $f (@f){
+    ($k, $v) = ($f =~ m/^([^=]+)=(.*)/);
+    if ($k){
+# Do not change the order of these lines
+      $v =~ s/\%13/\n/gs;
+      $v =~ s/\%25/\%/gs;
+      $r{$k} = $v;
+    }
+  }
+  return %r;
+}
+
+Now the parameters in the gamestate file can be acessed
+in Perl like:  $r{tableId}
+
+
+The parameters in a gamestate file are:
+
+    error - if there was a problem, this contains the error message;
+            for example if the submited move was illeagle and not accepted
+    tableId - the game id used to identify this game in the gameroom
+    t - same as tableId
+    title - the title of the game/table for displaying to users
+    wplayer - username of the white (gold) player
+    bplayer - username of the black (silver) player
+    position - the game position using the Arimaa position notation;
+               same as the contents of the position file
+    moves - list of moves made in the game using the Arimaa game notation;
+            same as the contents of the move list file
+    chat - chat messages exchanged between the players
+    turn - which players turn it is (w or b)
+    s - which side you are playing (w or b)
+    plycount - the current move number (1 if 1w or 1b; 2 if 2w or2b)
+    timecontrol - the game time control as a string; 
+                  for example: "3/4/100/5/6"
+                  See http://arimaa.com/arimaa/learn/matchRules.html
+    tcmove - number of seconds per move set in the timecontrol;
+             for the above example timecontrol it would be 3*60
+    tcreserve - number of seconds set for the reserve in the timecontrol;
+                for the above example it would be 4*60
+    tcpercent - the percent of time per move to add to the reserver;
+                for the above example it would be 100
+    tcmax - number of seconds set for maximum reserve in the timecontrol;
+            for the above example it would be 5*60
+    tctotal - the number of seconds for the total game time;
+              for the above example it would be 6*60*60; or 0 if no limit
+    tcturntime - the max number of seconds a turn can take
+    tcwreserve - the number of seconds left for white reserve time
+    tcbreserve - the number of seconds left for black reserve time
+    tcwreserve2 - if tcturntime is set then tcwreserve may not reflect the
+                  real reserve time left; this paramter show the real reserve
+    tcbreserve2 - if tcturntime is set then tcbreserve may not reflect the
+                  real reserve time left; this paramter show the real reserve
+    tcgamenow - number of seconds currently left in the game
+    tcgame - number of seconds left in the game when the turn began
+    postal - set to 1 if it is a postal game; ie the time per move is
+             more than 1 hour
+    starttime - unix timestamp of when the game began
+    wpresent - time of when the white player joined; 0 if not present
+    bpresent - time of when the white player joined; 0 if not present
+
+    wstartmove - unix timestamp of when the white player started the
+                 current move
+    bstartmove - unix timestamp of when the black player started the
+                 current move
+    wused - number of seconds white used for the current or most
+            recent move
+    bused - number of seconds black used for the current or most
+            recent move
+    lastmoveused - number of seconds used by the player who made
+                   the last move
+    starttime - unix timestamp of when the game began
+    result - set to what the result of the game was, if the game 
+             has ended; for example wr (white wins opponent resigned),
+             bg (black wins rabbit reached the goal)
+             See http://arimaa.com/arimaa/gameroom/reasonCodes.html
+    takeback - if a takeback is requested this is set to indicate which
+               side requested the takeback and on which turn; 
+               for example: "w 7b" (white requests takeback while
+               for black to submit move 7), "b 12b" (black requests
+               takeback when it is blacks 12th move)
+    takebackreply - set to "yes" or "no" to indicate the opponents
+                    acceptance or denial of the takeback request
+
+
+  Additional parameters that are present, but maybe not of use
+    to the 'getMove' program:
+
+    gameId - actually the gameserver session Id; see also tableId
+    auth - used to authenticate the bot when posting the move
+    lastchange - value to be sent when requesting the next gamestate
+    createtime - unix timestamp of when the game was created;
+                 see also starttime
+    r - the role of this client; (w, b, or v); v for viewer;
+        w or b if player; see also the s parameter
+
+  More parameters may be added in the future.
+
+
+A 'unix timestamp' is the number of seconds it has been since
+January 1st, 1970 GMT.
+
+A note about take backs.  In games with time control a takeback
+can only be requested before the opponent submits the move.
+Requests made after that are ignored.  In a no time limit game
+(timecontrol = "0/0/0/0/0") unlimited takebacks can be requested
+and the request can be made at any time.  If the request is made
+while it is that players turn (and accepted) then the opponents
+last move and the players last move are taken back.
+Takeback requests can also be ignored in which case when the
+move is submitted it implies that the request was denied.
+
+

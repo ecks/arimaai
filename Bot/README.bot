@@ -1,0 +1,212 @@
+The 'bot' and 'botman' scripts provide an easy way to
+interface a 'getMove' program to the Arimaa gameroom.
+
+Requires:
+1. A computer connected to the internet
+2. Perl 5+
+3. The LWP and HTTP Perl modules installed.
+   http://www.cpan.org/modules/by-module/LWP/
+   http://www.cpan.org/modules/by-module/HTTP/
+4. An OS that allows Perl to spawn a process using 
+   `command arguments` and system().
+5. An OS that supports signals to be sent to processes
+
+I know this works fine on Linux, and also seems to work
+on Windows using Activestate perl. I have not 
+tried it on other OSs.  Let me know if you do.
+
+There are 3 programs that make up the bot.
+1. getMove - given the current game information just needs to
+             print out the move to make.
+2. bot - allows the bot to connect to the gameroom once, 
+         play one game and exit.  This script spawns the 'getMove'
+         program to get the move when it is the bots turn.
+3. botman - bot manager script which allows a bot to be logged 
+            into the gameroom and setup open games for player
+            (humans or other bots) to join.
+            This script spawns the 'bot' script to play a game.
+   botmanwin - similar to botman, but for Windows platform.
+
+---- bot ----
+
+When you run the 'bot' script manually it connects to the gameroom
+logs in, creates a table, waits for someone to join,
+plays a game and exits.
+
+The 'bot.cfg' file has the configuration parameters for the
+URL of the gameroom, the login information and
+other such things.  You need to edit this file and set
+your login parameters.
+
+Whenever the bot needs to make a move it runs the `getMove`
+program and passes the names of 3 files containing the game
+information.  The filenames are passed as the 1st, 2nd and
+3rd arguments to the `getMove` program.  The first file
+contains the current game position.  The second file contains
+the list of moves that have been made so far.  The third
+file contains the complete game state which includes things
+like the timecontrol, player names, game id, etc.  The
+'getMove' program really only needs to read in the first
+file (the current game position) decide what move it wants
+to make and print it out.  The second and third files are
+just additional information if you want to use it.
+A sample getMove program is provided.  It is written in Perl
+but you can write this program in any language you want.  
+
+The format of the game position file and the move notation is 
+defined on the Arimaa site:  
+  http://arimaa.com/arimaa/learn/notation.html
+
+The format of the game state file is defined in the
+README.gamestate file included in this package.
+
+By default the bot creates a new game and sits down as
+the black (silver) player.  The first argument to the
+bot script can be 'w' or 'b' to specify what side to play.
+If the first argument is 'play' then the second argument
+can be either the 'username' to play against or the
+'game ID'. Optionally the side can be provided as the
+third argument in case there is a choice.
+
+Examples:
+
+  % bot
+ 
+This will cause the bot to login to the gameroom, create
+a table, sit down as black (silver), play a game and exit.
+
+  % bot w
+
+Same as before but this time sit down as white (gold).
+
+  % bot play bot_ShallowBlue
+
+Play a game against bot_ShallowBlue.  bot_ShallowBlue should 
+already have a game created and be waiting for someone to join. 
+Usernames are case insensitive.
+Note that bots should not join a game that has been opened
+by a person and should only join games if they have been
+opened by created by another bot.  To play a person
+the bot should create an open game and wait for a person
+to join.
+
+  % bot play bot_ShallowBlue b
+
+Same as before, but play black. The side is needed
+in case bot_ShallowBlue has two or more games open with different
+sides and we want to only play a specific side.  If there
+is a choice and the side is not specified then it will just 
+play black (silver).  When there is no choice the side does
+not need to be specified.  If side is specified and that
+side is not available, then it just exits.
+
+  % bot play 483
+or
+  % bot play 483 w
+
+Sit down at game ID 483.  Side can be specified if there is a
+choice, but usually not needed.
+
+  % bot move 483 w
+
+Makes a move in the specified game and exits.
+This is useful for playing postal games. See also 'botman postal'.
+
+
+-----  botman -----
+
+If you are on a Windows platform skip this and go to
+the botmanwin section. This only applies to Unix.
+
+The botman script allows the bot to be logged into
+the gameroom continiously and play games automatically
+with other players.  The botman script logs into the gameroom
+and creates a new game and randomly picks a side to play.
+It spawns a the 'bot' script to play the game.
+Currently any invitations are ignored.
+
+Just run it in the background to get it started:
+
+  % botman start &
+
+Besure that you have created an account for your bot and
+have entered the login information in the bot.cfg file.
+
+To stop the botman, just run it with 'stop' as the 
+first argument.
+
+  % botman stop
+
+This will cause the botman to close any open tables,
+and exit.  But games that have already been started will
+continue to be played.  To also stop all bots playing
+games, run it with 'stopall'.  
+
+  % botman stop 483
+
+Stop the bot that is playing game ID 483. This will stop
+the bot even if it is in the middle of a game; thus the
+bot will most likely lose the game due to time expiring.
+The bot can be started later to resume the game, if it
+has not expired. If the bot was waiting with an open
+table, it will close the table as well.
+
+  % botman stopall
+
+This stops all your bot sessions; those waiting with
+open tables as well as those that are in the middle of game.
+Note that your bots will most likely lose any current games 
+due to time expiring.  But when botman is restarted
+it will start bots to continue any unfinished games.
+
+  % botman postal
+
+This will check every 10 minutes to see if we need to
+make a move in any of our postal games. Exits when there
+are no more postal games in progress.
+
+---- botmanwin ----
+
+On the Windows platform you must use the botmanwin script
+instead of botman. However botmanwin does not have all
+the feature of botman. The botmanwin script only runs
+one bot at a time and starts a new one only after the
+first one has finished the game.
+
+On the Windows platform the bot was tested with the
+ActiveState version of Perl.  This has the required
+modules build in it so you don't need to install them
+seperately.  You can download ActiveState Perl from:
+
+http://activestate.com/Products/Download/Download.plex?id=ActivePerl
+
+Get the latest version for Windows with the MSI installer.
+
+
+To keep your bot running continously and playing one
+game after another, start it as follows:
+
+  % perl botmanwin
+
+To stop it do the following:
+  1. Hit Ctrl-C in the window running botmanwin.
+  2. From another MS-DOS window type:
+       % perl botman stop
+Note that in step 2 you must use botman and not botmanwin.
+
+To have the bot make moves in postal games, start it as:
+
+  % perl botmanwin postal
+
+This will check every 10 minutes to see if we need to
+make a move in any of our postal games. Exits when there
+are no more postal games in progress.
+
+---- Making your own bot ----
+
+All you really need to do to make your own bot is to
+create a 'getMove' program.  A sample one is provided.
+
+Omar
+arimaa_game@yahoo.com
+
