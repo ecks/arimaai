@@ -35,10 +35,9 @@ def init_a_board(limit, insideElement):
          map(lambda xL : map(xL.append, itertools.repeat(insideElement,limit)), board)     # initialize empty board
 	 return board
 
-
+# each piece corresponds to a unique value
 GOLD = 0 
 SILVER = 6
-#	TURN_MASK = 1
 ELEPHANT = 6
 CAMEL = 5
 HORSE = 4
@@ -48,14 +47,14 @@ RABBIT = 1
 EMPTY = 0
 MAX_COMBOS = (SILVER + ELEPHANT) + 1
 LIMIT_ON_BOARD = 8
-#	POS_MASK = 15
 
 class Board:
  
      cToNum = dict(zip(map(chr,range(97,105)),range(0,8))) # easy way to go from char to int, so cToNum['a'] => 0 .. cToNum['h'] => 7
 
      turn = "gold" #which player's turn is it?
-     
+    
+     # convert from the string specification needed by PGNs to the ints required for hashing
      pieces = {'.' : EMPTY,
 	       'X' : EMPTY,
                'E' : GOLD+ELEPHANT,
@@ -79,7 +78,10 @@ class Board:
 
 
      color = {'g' : "Gold", 's' : "Silver"}
+
+     # class constructor
      def __init__(self, hash_board):
+	 # initialize our board with "."
          self.board = init_a_board(LIMIT_ON_BOARD, '.')
 	 self.hash_board = hash_board
          self.hashkey = 0
@@ -90,17 +92,21 @@ class Board:
          self.board[5][5] = "X"
          self.nextToMove = GOLD
          self.totalMoves = 0
+	 # calculate the initial hashkey - notice that this is most computationally intensive task,
+	 # since we must recurse through the entire two-dimensional array. this is the only time we 
+	 # will have to do this
 	 self.calculateHashkey()
     
-
+     # method called in the beginning when we are initially placing pieces only
      def initBoard(self, mv):
 	 row = int(mv[2])
 	 column = self.cToNum[mv[1]]
 	 piece = mv[0]
-	 oldPiece = self.board[row][column] # we need a reference to the old piece
-         self.board[row][column] = piece;  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
+	 oldPiece = self.board[row][column] # we need a reference to the old piece since we will XOR it from the current key in order to get rid of it
+         self.board[row][column] = piece;  
          self.updateHashkey((row,column,oldPiece))
 
+     # method called subsequently when a player actually needs to move a piece
      def updateBoard(self, mv):
          piece = mv[0];
          column = self.cToNum[mv[1]]
@@ -108,6 +114,8 @@ class Board:
          pos = (row, column)
 
          #Pieces can't move out of the board, and rabbits can't move backwards, and opponents pieces can only be moved by a push or pull
+
+	 # We must recalculate the hash key two times, once for the new moved position, and once for the old position we moved from
          if mv[3] is "s":
            if self.isValidMove((row+1,column), pos, piece) == False or (piece == "R" and self.turn == "gold"):
              print "Cannot move south!"
@@ -188,9 +196,13 @@ class Board:
              print chr(letter),
          print
 
+     # helper
      def printHashKey(self):
 	 print "Current hashkey: " + str(self.hashkey)
 
+
+     # updates a hashkey, first XORing the old position, then XORing the new position
+     # notice that the third parameter passed is the old piece, since we can get the new piece directly
      def updateHashkey(self, (i,j,oldPiece)):
          intValueOfOldPos = self.pieces[oldPiece]
 	 intValueOfNewPos = self.pieces[self.board[i][j]]
@@ -198,13 +210,14 @@ class Board:
 	 self.hashkey ^= self.hash_board[i][j][intValueOfNewPos]
 	 self.printHashKey()
 
+     # called in the beginning, initializes the hashkey
      def calculateHashkey(self):
          hashkey = 0
 	 for i in range(LIMIT_ON_BOARD):
            for j in range(LIMIT_ON_BOARD):
 	     stringOfPos = self.board[i][j]
-	     intValueOfPos = self.pieces[stringOfPos]
-	     hashkey ^= self.hash_board[i][j][intValueOfPos]
+	     intValueOfPos = self.pieces[stringOfPos] # get the integer value of the pos in order to refer to it
+	     hashkey ^= self.hash_board[i][j][intValueOfPos] # get the actual hash code that we will use
          self.hashkey = hashkey
 	 self.printHashKey()
 
