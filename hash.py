@@ -41,4 +41,4 @@ class Hash:
 	return self.hash_board
 
 
-	
+  def 

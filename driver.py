@@ -1,3 +1,5 @@
+# comment
+
 import board
 import hash
 
