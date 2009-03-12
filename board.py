@@ -77,12 +77,12 @@ class Board:
                'r' : SILVER+RABBIT
               } 
 
-     hashkey = 0
-
 
      color = {'g' : "Gold", 's' : "Silver"}
-     def __init__(self):
+     def __init__(self, hash_board):
          self.board = init_a_board(LIMIT_ON_BOARD, '.')
+	 self.hash_board = hash_board
+         self.hashkey = 0
          ####### trap squares
          self.board[2][2] = "X"
          self.board[2][5] = "X"
@@ -90,10 +90,16 @@ class Board:
          self.board[5][5] = "X"
          self.nextToMove = GOLD
          self.totalMoves = 0
+	 self.calculateHashkey()
     
 
      def initBoard(self, mv):
-         self.board[int(mv[2])][self.cToNum[mv[1]]] = mv[0];  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
+	 row = int(mv[2])
+	 column = self.cToNum[mv[1]]
+	 piece = mv[0]
+	 oldPiece = self.board[row][column] # we need a reference to the old piece
+         self.board[row][column] = piece;  # mv[0] is the piece, mv[1] is its column, mv[2] is its row
+         self.updateHashkey((row,column,oldPiece))
 
      def updateBoard(self, mv):
          piece = mv[0];
@@ -106,26 +112,42 @@ class Board:
            if self.isValidMove((row+1,column), pos, piece) == False or (piece == "R" and self.turn == "gold"):
              print "Cannot move south!"
            else:
+	     oldPiece = self.board[row+1][column]
              self.board[row+1][column] = piece 
+	     self.updateHashkey((row+1,column,oldPiece))
+	     oldPiece = self.board[row][column]
              self.board[row][column] = "."
+	     self.updateHashkey((row,column,oldPiece))
          elif mv[3] is "e":
            if self.isValidMove((row,column+1), pos, piece) == False:
              print "Cannot move east!"
            else:
+	     oldPiece = self.board[row][column+1]
              self.board[row][column+1] = piece
+	     self.updateHashkey((row,column+1,oldPiece))
+             oldPiece = self.board[row][column]
              self.board[row][column] = "."
+	     self.updateHashkey((row,column,oldPiece))
          elif mv[3] is "w":
            if self.isValidMove((row,column-1), pos, piece) == False:
              print "Cannot move west!"
            else:
+	     oldPiece = self.board[row][column-1]
              self.board[row][column-1] = piece
+	     self.updateHashkey((row,column-1,oldPiece))
+	     oldPiece = self.board[row][column]
              self.board[row][column] = "."
+	     self.updateHashkey((row,column,oldPiece))
          elif mv[3] is "n":
            if self.isValidMove((row-1,column), pos, piece) == False or (piece == "r" and self.turn == "silver"):
              print "Cannot move north!"
            else:
+	     oldPiece = self.board[row-1][column]
              self.board[row-1][column] = piece
+	     self.updateHashkey((row-1,column,oldPiece))
+	     oldPiece = self.board[row][column]
              self.board[row][column] = "."
+	     self.updateHashkey((row,column,oldPiece))
         
      def isValidMove(self, (r,c), (origr, origc), piece):
           valid = False #Boolean of whether this is a valid move. Start as false to prevent unplanned moves
@@ -167,18 +189,27 @@ class Board:
          print
 
      def printHashKey(self):
-	 print "Current hashkey:"
-	 print self.hashkey
+	 print "Current hashkey: " + str(self.hashkey)
 
-     def calculateHashkey(self, board, hash_board):
+     def updateHashkey(self, (i,j,oldPiece)):
+         intValueOfOldPos = self.pieces[oldPiece]
+	 intValueOfNewPos = self.pieces[self.board[i][j]]
+	 self.hashkey ^= self.hash_board[i][j][intValueOfOldPos]
+	 self.hashkey ^= self.hash_board[i][j][intValueOfNewPos]
+	 self.printHashKey()
+
+     def calculateHashkey(self):
          hashkey = 0
 	 for i in range(LIMIT_ON_BOARD):
            for j in range(LIMIT_ON_BOARD):
-	     stringOfPos = board[i][j]
+	     stringOfPos = self.board[i][j]
 	     intValueOfPos = self.pieces[stringOfPos]
-	     hashkey ^= hash_board[i][j][intValueOfPos]
+	     hashkey ^= self.hash_board[i][j][intValueOfPos]
          self.hashkey = hashkey
 	 self.printHashKey()
+
+     def getHashkey(self):
+         return self.hashkey
      
      def getBoard(self):
 	 return self.board
@@ -190,9 +221,6 @@ class Board:
          mvList = mv[1:];
 
          mvList = map(lambda xL: xL[0:2] + str(int(xL[2])*(-1)+8) + xL[3:], mvList)  # convert from 8 -> 0, 7 -> 1 .. 1 -> 7, and assign back into mvList
-
-
-         print len(mvList)
 
          # Initial setup.
          if len(mvList[0]) == 3:
