@@ -10,18 +10,39 @@ def readBoard(board):
 
 # Parses the board
 def parseBoard(file):
+
+    board_state = []
+
     count = file.read(1)  # turn number
     turn = file.read(2)   # white or black
     lines = file.readlines() # the rest of the lines
-    del lines[0:1] # get rid of the +----+
+    del lines[0:2] # get rid of the +----+
     del lines[-3:-1] # get rid of the bottom rows
       
-    state
+
+
+    # By now, the board should like this:
+    # 8|   r   r r   r   |
+    # 7| m   h     e   c |
+    # 6|   r x r r x r   |
+    # 5| h   d     c   d |
+    # 4| E   H         M |
+    # 3|   R x R R H R   |
+    # 2| D   C     C   D |
+    # 1|   R   R R   R   |
+
 
     for line in lines:
-       # to implement later, generate state
+        row = line[0]
+        col = 0
+        line_col = 5
+        for i in range (7):
+            char = line[line_col]
+            line_col = line_col + 2
+            print char,
+        print
     
-    return (count, turn, state) 
+    return (count, turn) 
 
 # Random function that
 # picks starting positions based off a turns color
@@ -41,12 +62,9 @@ def randSetup(turn):
      return setup[random.randint(0,3)]
    
 board = sys.argv[1]
-(count, turn, state) = readBoard(board)
+(count, turn) = readBoard(board)
 
 # Setup Board
 if count == 1:
   print randSetup(turn)
   quit()
-else:
-  # zobrist_hash(state)
-  # find best move based on minimax
