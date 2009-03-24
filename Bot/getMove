@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import sys
 import random
-
+import string
 
 # Reads the board in
 def readBoard(board_file):
@@ -63,7 +63,16 @@ def randSetup(turn):
               'me7 ed7 ha7 hh7 db7 dg7 cc8 cf8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8']
 
      return setup[random.randint(0,3)]
-   
+
+# Returns the strength value of a given piece.
+def pieceVal(piece):
+    piece = piece.lower()   # Make the piece lowercase.
+    transTable = string.maketrans("emhdcr", "654321")  # Make the translation table.
+
+    #delete letters
+    piece = string.translate(piece, transTable)  # Translate the piece
+    return piece
+
 board_file = sys.argv[1]
 
 (count, turn, board) = readBoard(board_file)
