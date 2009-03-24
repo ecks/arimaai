@@ -4,14 +4,14 @@ import random
 
 
 # Reads the board in
-def readBoard(board):
-    file = open(board, 'r')
+def readBoard(board_file):
+    file = open(board_file, 'r')
     return parseBoard(file)
 
 # Parses the board
 def parseBoard(file):
 
-    board_state = []
+    board = [['.' for col in range (8)] for row in range(8)]  
 
     count = file.read(1)  # turn number
     turn = file.read(2)   # white or black
@@ -31,18 +31,21 @@ def parseBoard(file):
     # 2| D   C     C   D |
     # 1|   R   R R   R   |
 
-
+    # We need to grab each char from the board
+    # and construct a board state.
+    # Row obviously starts at 0, col starts at 5
+    # because that's where chars start in the above board.
+    row = 0
+    line_col = 5
     for line in lines:
-        row = line[0]
-        col = 0
-        line_col = 5
-        for i in range (7):
+        for col in range (7):
             char = line[line_col]
+            board[row][col] = char
             line_col = line_col + 2
-            print char,
-        print
+        row = row + 1
+        line_col = 5
     
-    return (count, turn) 
+    return (count, turn, board) 
 
 # Random function that
 # picks starting positions based off a turns color
@@ -61,10 +64,15 @@ def randSetup(turn):
 
      return setup[random.randint(0,3)]
    
-board = sys.argv[1]
-(count, turn) = readBoard(board)
+board_file = sys.argv[1]
+
+(count, turn, board) = readBoard(board_file)
+
+print "Count is: " + repr(count)
 
 # Setup Board
 if count == 1:
+  print "hey"
   print randSetup(turn)
-  quit()
+
+print "frozen"
