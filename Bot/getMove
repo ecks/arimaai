@@ -68,11 +68,6 @@ board_file = sys.argv[1]
 
 (count, turn, board) = readBoard(board_file)
 
-print "Count is: " + repr(count)
-
 # Setup Board
-if count == 1:
-  print "hey"
+if count == "1":
   print randSetup(turn)
-
-print "frozen"
