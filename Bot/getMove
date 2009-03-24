@@ -17,10 +17,8 @@ def parseBoard(file):
     turn = file.read(2)   # white or black
     lines = file.readlines() # the rest of the lines
     del lines[0:2] # get rid of the +----+
-    del lines[-3:-1] # get rid of the bottom rows
+    del lines[8:10] # get rid of the bottom rows
       
-
-
     # By now, the board should like this:
     # 8|   r   r r   r   |
     # 7| m   h     e   c |
@@ -36,22 +34,22 @@ def parseBoard(file):
     # Row obviously starts at 0, col starts at 5
     # because that's where chars start in the above board.
     row = 0
-    line_col = 5
+    line_col = 3
     for line in lines:
-        for col in range (7):
+        for col in range (8):
             char = line[line_col]
             board[row][col] = char
             line_col = line_col + 2
         row = row + 1
-        line_col = 5
-    
+        line_col = 3
+   
     return (count, turn, board) 
 
 # Random function that
 # picks starting positions based off a turns color
 # These are predefined as good starting positions.
 def randSetup(turn):
-   if turn == 'w':
+   if turn == 'w' or turn == 'g':
      setup = ['Ee2 Md2 Ca1 Dc2 Hb2 Hg2 Ch1 Df2 Rb1 Rc1 Rd1 Re1 Rf1 Rg1 Ra2 Rh2',
               'Ee2 Md2 Da1 Hb2 Dh1 Hg2 Cf1 Cc1 Rb1 Rd1 Re1 Rg1 Ra2 Rc2 Rf2 Rh2',
               'Ee2 Md2 Hh2 Dg2 Db1 Ca2 He1 Cf1 Ra1 Rc1 Rd1 Rg1 Rh1 Rb2 Rc2 Rf2',
@@ -73,6 +71,22 @@ def pieceVal(piece):
     piece = string.translate(piece, transTable)  # Translate the piece
     return piece
 
+
+
+# Make random move
+def makeRandomMove(turn, count, board):
+    if turn == 'w' or turn == 'g':
+        direction = "n"
+    else:
+        direction = "s"
+ 
+# Searches for a random piece to move
+def searchRandomPiece(turn, board):
+    for pos in board:
+        if turn == 'w':
+            if pos.isUpper():
+                return pos
+
 board_file = sys.argv[1]
 
 (count, turn, board) = readBoard(board_file)
@@ -80,3 +94,5 @@ board_file = sys.argv[1]
 # Setup Board
 if count == "1":
   print randSetup(turn)
+else:
+  print searchRandomPiece(turn, board)
