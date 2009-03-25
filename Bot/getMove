@@ -66,8 +66,6 @@ def randSetup(turn):
 def pieceVal(piece):
     piece = piece.lower()   # Make the piece lowercase.
     transTable = string.maketrans("emhdcr", "654321")  # Make the translation table.
-
-    #delete letters
     piece = string.translate(piece, transTable)  # Translate the piece
     return piece
 
