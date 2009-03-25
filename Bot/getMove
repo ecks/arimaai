@@ -11,7 +11,7 @@ def readBoard(board_file):
 # Parses the board
 def parseBoard(file):
 
-    board = [['.' for col in range (8)] for row in range(8)]  
+    board = [[' ' for col in range (8)] for row in range(8)]  
 
     count = file.read(1)  # turn number
     turn = file.read(2)   # white or black
@@ -42,7 +42,7 @@ def parseBoard(file):
             line_col = line_col + 2
         row = row + 1
         line_col = 3
-   
+    print board   
     return (count, turn, board) 
 
 # Random function that
