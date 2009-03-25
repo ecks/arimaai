@@ -148,7 +148,6 @@ def isValid(board, x, y, x2, y2, turn):
     ally = 0  #strength of most powerful adjacent ally
     if (x-1 >= 0): #next several statements make sure piece is not frozen
         piece = board[x-1,y]
-        if (piece < enemy):
             enemy = piece
         elif (piece > ally):
             ally = piece
