@@ -3,6 +3,7 @@ import sys
 import random
 import string
 
+import genMove
 # Reads the board in
 def readBoard(board_file):
     file = open(board_file, 'r')
@@ -42,7 +43,6 @@ def parseBoard(file):
             line_col = line_col + 2
         row = row + 1
         line_col = 3
-    print board   
     return (count, turn, board) 
 
 # Random function that
@@ -60,7 +60,7 @@ def randSetup(turn):
               'ee7 md7 ha7 hh7 db7 dg7 cf8 cc8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8',
               'me7 ed7 ha7 hh7 db7 dg7 cc8 cf8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8']
 
-     return setup[random.randint(0,3)]
+   return setup[random.randint(0,3)]
 
 # Returns the strength value of a given piece.
 def pieceVal(piece):
@@ -91,6 +91,8 @@ board_file = sys.argv[1]
 
 # Setup Board
 if count == "1":
+# uncomment if you're feeling adventurous  
+# genMove.generateMove(board, turn)
   print randSetup(turn)
 else:
   print searchRandomPiece(turn, board)
