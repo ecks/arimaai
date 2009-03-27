@@ -5,6 +5,7 @@
 import sys
 from Position import * 
 from board import *
+import copy
 
 moveBoardList = []
 
@@ -26,8 +27,7 @@ def otherTurn(turn):
 
 # for board, return a list that contains a tuple of move and board for a particular board state 
 def generateMove(board):
-    aBoard = board.board
-    printBoard(aBoard)
+    aBoard = list(board.board)
 #    for moveNum in range(0,4): #loop for each move in the turn
     for row in range(0,8): #loop over full board
             for col in range(0,8):
@@ -43,12 +43,14 @@ def generateMove(board):
 		    oldPos = Position(aBoard[row][col], row,col, '-')
 		    pos = Position(aBoard[row][col], row-1,col, 'n')
 		    if checkMove(aBoard,pos):
-   		      aNewBoard,newNumMoves = updateBoard(aBoard, oldPos, pos, board.numMoves)
-		      newBoard = Board(aNewBoard,newNumMoves, otherTurn(board.turn))
-		      printBoard(aNewBoard)
+		      # list(aBoard) creates new instance of board
+		      # fucking retarted!!!!!!!!
+		      instBoard = copy.deepcopy(aBoard)
+   		      aNewBoard,newNumMoves = updateBoard(instBoard, oldPos, pos, board.numMoves)
+   		      newBoard = Board(aNewBoard,newNumMoves, otherTurn(board.turn))
                       moveBoardList.append((pos, newBoard))
-#    for l in moveBoardList:
-#      printBoardAndTurn(l[1])
+    for l in moveBoardList:
+      printBoard(l[1].board)
 	            
                 
 def checkMove (board, pos):
