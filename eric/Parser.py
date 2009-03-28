@@ -26,13 +26,15 @@ class Parser(object):
     def parse(self):
         board = [[' ' for col in range (8)] for row in range(8)]
 
-        count = (self.file.read(1)).strip()      # turn number
-        color  = (self.file.read(2)).strip()     # white or black
-        steps = ""                     # steps already taken (not being used)
+        line = self.file.readline()
+        count = line[0]      # turn number
+        color  = line[1]     # white or black
+        steps = line[3:-1]
         lines = self.file.readlines()  # the rest of the lines
         
-        del lines[0:2]  # get rid of the +----+
-        del lines[8:10] # get rid of the bottom rows
+        del lines[0:1]  # get rid of the +----+
+        lines.pop()
+        lines.pop() # get rid of the bottom rows
 
         # By now, the board should like this:
         # 8|   r   r r   r   |

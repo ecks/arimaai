@@ -9,9 +9,11 @@ import sys
 import os.path
 import Parser
 import MoveGenerator
+import Step
 
 
 if __name__ == '__main__':
+   
     
     # There were no command line arguments, ask for position file name.
     if len(sys.argv) < 2:
@@ -29,8 +31,9 @@ if __name__ == '__main__':
         (count, color, steps, board) = parser.parse() # parse out the juicy stuff
         file.close()
         
-        generator = MoveGenerator.MoveGenerator(count, color, steps, board)
-        generator.genMoves()
+        generator = MoveGenerator.MoveGenerator(count, color, board)
+        print steps
+        generator.genMoves(steps)
     else:
         print "File not found"
         
