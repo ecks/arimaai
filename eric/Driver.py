@@ -32,7 +32,6 @@ if __name__ == '__main__':
         file.close()
         
         generator = MoveGenerator.MoveGenerator(count, color, board)
-        print steps
         generator.genMoves(steps)
     else:
         print "File not found"

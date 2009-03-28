@@ -29,7 +29,9 @@ class Parser(object):
         line = self.file.readline()
         count = line[0]      # turn number
         color  = line[1]     # white or black
-        steps = line[3:-1]
+        steps = ""
+        if len(line) >= 4:
+            steps = line[3:-1]
         lines = self.file.readlines()  # the rest of the lines
         
         del lines[0:1]  # get rid of the +----+
@@ -62,4 +64,3 @@ class Parser(object):
             line_col = 3
         
         return (count, color, steps, board)
-        

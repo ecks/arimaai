@@ -10,7 +10,7 @@ import string
 
 class Step(object):
 
-    # Some pseduo enum types to be used for determing
+    # Some pseudo enum types to be used for determining
     # what the next move can/must be.
     # See  __nextMoveType in MoveGenerator.py
     REGULAR = 0
@@ -23,6 +23,8 @@ class Step(object):
     # @param step - Arimaa step to be processed for our game. (something like Cc1n)
     def __init__(self, step):
         
+        self.arimaa_step = step
+        
         if (step == ""):
             return
         
@@ -32,7 +34,7 @@ class Step(object):
         self.dir = step[3:4]                  # n
         
         # Get the correct color.
-        self.color = Step.pieceColor(self, self.piece)
+        self.color = Step.pieceColor(self.piece)
         
         # Make the translation table for columns
         transTable = string.maketrans("abcdefgh", "12345678")
@@ -71,7 +73,7 @@ class Step(object):
     # If it's a blank space, color is returned as nothing.
     # @param piece - the piece
     # @return color - the piece's color            
-    def pieceColor(self, piece):
+    def pieceColor(piece):
         if piece == " ":
             color = " "
         elif piece.isupper():
@@ -80,3 +82,8 @@ class Step(object):
             color = "b"
         
         return color
+    
+    def __str__(self):
+        return self.arimaa_step
+    
+    pieceColor = staticmethod(pieceColor)

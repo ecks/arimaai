@@ -28,26 +28,38 @@ class MoveGenerator(object):
         
     ##
     # Generates all possible moves in a given area.
-    # @param steps - list of steps already taken (a move is a list of steps).
+    # @param steps_in - list of steps already taken (a move is a list of steps).
     # @param start_row - the starting row of the given area
     # @param start_col - the starting column of the given area
     # @param end_row - the ending row of the given area
     # @param end_col - the ending column of the given area
     # @return moves - a list of moves (a move is a list of steps)
     def genMoves(self, steps_in, start_row = 0, start_col = 0, end_row = 7, end_col = 7):
-        
+                
         steps = []
+        moves = []
+        
         # Construct Step objects out of all the previous steps
         # taken.
         for step_in in steps_in.split():
             step = Step.Step(step_in)
             steps.append(step)
         
-        (moves, push) = self.__genSteps(steps, start_row, start_col, end_row, end_col)
-
+        list_of_steps = self.__genSteps(steps, start_row, start_col, end_row, end_col)
+        print list_of_steps
         
-        #for move in moves:
-         #   for step in move:
+        #prev_steps =  "".join(steps_in) # if all items are strings
+
+        #if len(list_of_steps) <= 0:
+         #   moves.append(prev_steps)
+        #else:
+         #   for steps in list_of_steps:
+          #      for step in steps:
+           #         moves.append(prev_steps + " " + "".join(step))
+            
+            
+        
+        
           #      # Pushes can't be added until they're completed.
            #     if step.endswith("-") == False:
             #        self.board = self.__createBoard(step)
@@ -81,36 +93,92 @@ class MoveGenerator(object):
                 last_step = step
         
         if steps_left <= 0:
-            return
+            return moves
         
+        # Next move type gives information about what the next step can/must be
         next_move_type = self.__nextMoveType(steps)
         
-
-        for row in range(start_row, end_row + 1):
-            for col in range(start_col, end_col + 1):
+        # If we're in the process of making a push, we have to complete the push.
+        # Multiple pieces could move into that position, just as long as their
+        # stronger and aren't on the same team.
+        if next_move_type == Step.Step.MUST_PUSH:
+            occ_adj_pos = self.__getAdjacentPositions(last_step.start_row, last_step.start_col, True)
+            for pos in occ_adj_pos:
+                row = pos[0]
+                col = pos[1]
                 piece = self.board[row][col]
-
-                # Don't care for blank spaces or trap squares
-                if piece == " " or re.match("x", piece, re.IGNORECASE):
+                color = Step.Step.pieceColor(piece)
+                if piece == " ":
                     continue
-                                
-                piece_color = Step.Step.pieceColor(piece)
-                
-                # Only generate moves for the current player
-                if piece_color == self.color:
-                    # Get all the unoccupied adjacent positions to this piece
-                    adj_pos = self.__getAdjacentPositions(row, col, False)
-                    
-                    # Is the piece NOT frozen
-                    if not self.__isFrozen(piece, adj_pos):
-                        steps = self.__makeStep(piece, row, col, adj_pos)
-                        moves.append(steps)
+                # A piece can't move into it's friendly space.
+                elif color != last_step.color:
+                    # See if this piece is stronger than the one that was just moved
+                    if self.__isStronger(piece, last_step.piece):
                         
-                # If we're here, then we found the opponent piece.
-                # Lets see if we can push or pull it.
-                else:
-                    # if push, push = "-"
-                    pass
+                        # Can this piece even move? Or is it frozen.
+                        piece_occ_adj_pos = self.__getAdjacentPositions(row, col, True)
+                        if not self.__isFrozen(piece, piece_occ_adj_pos):
+                            step = self.__makeStep(piece, row, col, [[last_step.start_row, last_step.start_col]])
+                            moves.append(step)
+                            
+        # Were not completing a push, we are free to do what we want
+        else:
+            for row in range(start_row, end_row + 1):
+                for col in range(start_col, end_col + 1):
+                    piece = self.board[row][col]
+    
+                    # Don't care for blank spaces or trap squares
+                    if piece == " " or re.match("x", piece, re.IGNORECASE):
+                        continue
+                                    
+                    piece_color = Step.Step.pieceColor(piece)
+                    
+                    # Get all the unoccupied and occupied adjacent positions to this piece
+                    unocc_adj_pos = self.__getAdjacentPositions(row, col, False)
+                    occ_adj_pos = self.__getAdjacentPositions(row, col, True)
+                    
+                    # Only generate moves for the current player
+                    if piece_color == self.color:
+    
+                        # Is the piece NOT frozen
+                        if not self.__isFrozen(piece, occ_adj_pos):
+                            step = self.__makeStep(piece, row, col, unocc_adj_pos)
+                            moves.append(step)
+                            
+                    # If we're here, then we found the opponent piece.
+                    # Lets see if we can push or pull it.
+                    else:
+                        
+                        # Try doing a pull if the last move we did can initialize a pull.
+                        if (next_move_type == Step.Step.CAN_PULL):
+                            
+                            # Get all the occupied positions to the last step.
+                            prev_adj_occ_pos = self.__getAdjacentPositions(last_step.start_row, last_step.start_col, True)
+                            for prev_adj_pos in prev_adj_occ_pos:
+                                if piece_color != self.color:
+                                    if self.__isStronger(last_step.piece, piece):
+                                        prev_adj_row = prev_adj_pos[0]
+                                        prev_adj_col = prev_adj_pos[1]
+                                        if row == prev_adj_row and col == prev_adj_col:
+                                            step = self.__makeStep(piece, row, col, [[last_step.start_row, last_step.start_col]])
+                                            moves.append(step)
+                                            
+                                        
+                        
+                        # Try performing a push on this piece.
+                        if (steps_left >= 2):
+                            for pos in occ_adj_pos:
+                                adj_row = pos[0]
+                                adj_col = pos[1]
+                                adj_piece = self.board[adj_row][adj_col]
+                                adj_color = Step.Step.pieceColor(adj_piece)
+                                if adj_color == self.color:
+                                    if self.__isStronger(adj_piece, piece):
+                                        adj_piece_occ_pos = self.__getAdjacentPositions(adj_row, adj_col, True)
+                                        if not self.__isFrozen(adj_piece, adj_piece_occ_pos):
+                                            step = self.__makeStep(piece, row, col, unocc_adj_pos)
+                                            moves.append(step)
+                                
                 
         return (moves, push)
         
@@ -177,7 +245,12 @@ class MoveGenerator(object):
             adj_row = pos[0]
             adj_col = pos[1]
             adj_piece = self.board[adj_row][adj_col]
+            
             if adj_piece == " ":
+                continue
+            elif adj_piece.isupper() and piece.isupper():
+                continue
+            elif adj_piece.islower() and piece.islower():
                 continue
             elif self.__isStronger(adj_piece, piece):
                 return True
