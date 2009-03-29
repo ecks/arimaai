@@ -11,6 +11,10 @@ import Step
 
 class MoveGenerator(object):
 
+
+    # Currently setting max steps to 2 so we can actually see the results finish.
+    MAX_STEPS = 2
+
     ##
     # MoveGenerator constructor
     # @param count - the turn number
@@ -45,26 +49,86 @@ class MoveGenerator(object):
             step = Step.Step(step_in)
             steps.append(step)
         
-        list_of_steps = self.__genSteps(steps, start_row, start_col, end_row, end_col)
-        print list_of_steps
+        # Next steps are all the steps that are possible given the starting steps 
+        # from steps_in. The steps are sorted by which piece you attempt to move.
+        next_steps = self.__genSteps(steps, start_row, start_col, end_row, end_col)
         
-        #prev_steps =  "".join(steps_in) # if all items are strings
+        prev_steps =  "".join(steps_in) # if all items are strings
 
-        #if len(list_of_steps) <= 0:
-         #   moves.append(prev_steps)
-        #else:
-         #   for steps in list_of_steps:
-          #      for step in steps:
-           #         moves.append(prev_steps + " " + "".join(step))
+        if len(next_steps) <= 0:
+            moves.append(prev_steps)
+        else:
+            for steps in next_steps:
+                for step in steps:
+                    self.__updateBoard("".join(step))
+                    allSteps = prev_steps + " " + "".join(step)
+                    
+                    # If we're not currently in a push, we can print this step out.
+                    if not self.__nextMoveTypeStr(allSteps) == Step.Step.MUST_PUSH:
+                        print allSteps
+
+                        
+                    self.genMoves(allSteps, start_row, start_col, end_row, end_col)
+                    self.board = self.original_board
+
             
             
+    ##
+    # Update the board with a new move.
+    # @param step - the step to change the board with
+    def __updateBoard(self, step):
+        step = Step.Step(step)
+        self.board[step.start_row][step.start_col] = " "
         
         
-          #      # Pushes can't be added until they're completed.
-           #     if step.endswith("-") == False:
-            #        self.board = self.__createBoard(step)
-             #       self.genMoves(move, start_row, start_col, end_row, end_col)
-              #      self.board = self.original_board
+        # Is the piece in a trap square?
+        if step.end_row == 2 and step.end_col == 2:
+            if not self.__isSafe(step.end_row, step.end_col):
+                self.board[step.end_row][step.end_col] = " "
+        elif step.end_row == 2 and step.end_col == 5:
+            if not self.__isSafe(step.end_row, step.end_col):
+                self.board[step.end_row][step.end_col] = " "
+        elif step.end_row == 5 and step.end_col == 2:
+            if not self.__isSafe(step.end_row, step.end_col):
+                self.board[step.end_row][step.end_col] = " "
+        elif step.end_row == 5 and step.end_col == 5:
+            if not self.__isSafe(step.end_row, step.end_col):
+                self.board[step.end_row][step.end_col] = " "
+        else:
+            self.board[step.end_row][step.end_col] = step.piece
+    
+    ##
+    # Simply returns whether or not a piece has a friendly
+    # piece next to it in an adjacent square. Used to check
+    # trap squares.
+    # @param row - the row
+    # @param col - the column
+    # @return True if it's safe, False otherwise.
+    def __isSafe(self, row, col):
+        adj_occ_pos = self.__getAdjacentPositions(row, col, True)
+        for pos in adj_occ_pos:
+            adj_row = pos[0]
+            adj_col = pos[1]
+            adj_piece = self.board[adj_row][adj_col]
+            piece = self.board[adj_row][adj_col]
+            if self.__areFriends(adj_piece, piece):
+                return True
+        
+        return False
+            
+    
+    ##      
+    # Determines if two pieces are on the same team.
+    # @param pieceA - the first piece
+    # @param pieceB - the second piece
+    # @return True if they are friends, False if they are enemies
+    def __areFriends(self, pieceA, pieceB):
+        if pieceA.isupper() and pieceB.isupper or pieceA.islower() and pieceB.islower():
+            return True
+        else:
+            return False
+            
+    
                 
     
     ##
@@ -78,9 +142,8 @@ class MoveGenerator(object):
     # @return push - indicated with a dash (-) that we are in the process of doing a push
     #               and we must finish it.
     def __genSteps(self, steps, start_row, start_col, end_row, end_col):
-        
         moves = []
-        steps_left = 4
+        steps_left = 2
         last_step = Step.Step("")
         push = ""
         
@@ -180,8 +243,16 @@ class MoveGenerator(object):
                                             moves.append(step)
                                 
                 
-        return (moves, push)
+        return moves
         
+    
+    def __nextMoveTypeStr(self, stepsStr):
+        steps = []
+        for step in stepsStr.split():
+            step = Step.Step(step)
+            steps.append(step)
+        
+        return self.__nextMoveType(steps)
     
     ##
     # Determines what the next move type can/must be.
@@ -212,10 +283,11 @@ class MoveGenerator(object):
         if last_step.color != self.color:
             
             # We just completed a pull
-            if len(steps) >= 2 and prev_step.start_row == last_step.end_row:
+            if len(steps) >= 2:
                 prev_step = steps[-2]
-                if prev_step.start_col == last_step.end_col:
-                    return Step.Step.REGULAR
+                if prev_step.start_row == last_step.end_row:
+                    if prev_step.start_col == last_step.end_col:
+                        return Step.Step.REGULAR
             # Or we're in the middle of a push
             else:
                 return Step.Step.MUST_PUSH
