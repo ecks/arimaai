@@ -8,6 +8,7 @@ Description: Generates all the possible moves given a board state.
 import string
 import re
 import Step
+import copy
 
 class MoveGenerator(object):
 
@@ -28,7 +29,7 @@ class MoveGenerator(object):
         # Going to need to hold onto the original board
         # state because we're going to making a lot of
         # new boards.
-        self.original_board = board
+        self.original_board = copy.deepcopy(self.board)
         
     ##
     # Generates all possible moves in a given area.
@@ -56,20 +57,25 @@ class MoveGenerator(object):
         prev_steps =  "".join(steps_in) # if all items are strings
 
         if len(next_steps) <= 0:
-            moves.append(prev_steps)
+            return
         else:
             for steps in next_steps:
                 for step in steps:
-                    self.__updateBoard("".join(step))
+                    
                     allSteps = prev_steps + " " + "".join(step)
+                    
+                    self.board = copy.deepcopy(self.original_board)
+                    for oneStep in allSteps.split():
+                        self.__updateBoard(oneStep)
                     
                     # If we're not currently in a push, we can print this step out.
                     if not self.__nextMoveTypeStr(allSteps) == Step.Step.MUST_PUSH:
                         print allSteps
+                        self.__displayBoard()
 
-                        
+                    
                     self.genMoves(allSteps, start_row, start_col, end_row, end_col)
-                    self.board = self.original_board
+                    
 
             
             
@@ -79,7 +85,6 @@ class MoveGenerator(object):
     def __updateBoard(self, step):
         step = Step.Step(step)
         self.board[step.start_row][step.start_col] = " "
-        
         
         # Is the piece in a trap square?
         if step.end_row == 2 and step.end_col == 2:
@@ -96,6 +101,27 @@ class MoveGenerator(object):
                 self.board[step.end_row][step.end_col] = " "
         else:
             self.board[step.end_row][step.end_col] = step.piece
+    
+    def __displayBoard(self):
+         print " ",
+         for letter in range(97, 105):
+             print chr(letter),
+         print
+
+         rowNum = 8
+         for i in self.board:
+           print rowNum,
+           for j in i:
+             print j,
+           print rowNum,
+           print
+           rowNum = rowNum - 1
+
+         print " ",
+         for letter in range(97, 105):
+             print chr(letter),
+         print
+         print
     
     ##
     # Simply returns whether or not a piece has a friendly
@@ -143,7 +169,7 @@ class MoveGenerator(object):
     #               and we must finish it.
     def __genSteps(self, steps, start_row, start_col, end_row, end_col):
         moves = []
-        steps_left = 2
+        steps_left = MoveGenerator.MAX_STEPS
         last_step = Step.Step("")
         push = ""
         
