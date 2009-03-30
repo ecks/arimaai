@@ -10,7 +10,9 @@ import os.path
 import Parser
 import MoveGenerator
 import Step
-
+import Hash
+import Board
+import copy
 
 if __name__ == '__main__':
    
@@ -33,6 +35,13 @@ if __name__ == '__main__':
         
         generator = MoveGenerator.MoveGenerator(count, color, board)
         generator.genMoves(steps)
+	hash = Hash.Hash()
+	print board
+	b = Board.Board(board, hash.get_hash_board())
+	b.calculateHashkey()
+#	sys.stderr.write(str(hash.get_hash_board()))
+#	for move in generator.moves:
+#		  generator.displayBoard(move)
     else:
         print "File not found"
         

@@ -14,7 +14,7 @@ class MoveGenerator(object):
 
 
     # Currently setting max steps to 2 so we can actually see the results finish.
-    MAX_STEPS = 2
+    MAX_STEPS = 4
 
     ##
     # MoveGenerator constructor
@@ -25,6 +25,7 @@ class MoveGenerator(object):
         self.count = count
         self.color = color
         self.board = board
+	self.moves = []
         
         # Going to need to hold onto the original board
         # state because we're going to making a lot of
@@ -57,7 +58,7 @@ class MoveGenerator(object):
         prev_steps =  "".join(steps_in) # if all items are strings
 
         if len(next_steps) <= 0:
-            return
+            return 
         else:
             for steps in next_steps:
                 for step in steps:
@@ -71,12 +72,34 @@ class MoveGenerator(object):
                     if not self.__nextMoveTypeStr(all_steps_with_traps) == Step.Step.MUST_PUSH:
                         print all_steps_with_traps
                         self.__displayBoard()
+			self.moves.append(self.board)
 
                     
                     self.genMoves(all_steps, start_row, start_col, end_row, end_col)
                     
 
-            
+    # global displaying
+    def displayBoard(self, aBoard):
+         print " ",
+         for letter in range(97, 105):
+             print chr(letter),
+         print
+
+         rowNum = 8
+         for i in aBoard:
+           print rowNum,
+           for j in i:
+             print j,
+           print rowNum,
+           print
+           rowNum = rowNum - 1
+
+         print " ",
+         for letter in range(97, 105):
+             print chr(letter),
+         print
+         print
+  
             
     ##
     # Update the board with a new move.
