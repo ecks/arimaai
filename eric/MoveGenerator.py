@@ -25,7 +25,7 @@ class MoveGenerator(object):
         self.count = count
         self.color = color
         self.board = board
-	self.moves = []
+        self.moves = []
         
         # Going to need to hold onto the original board
         # state because we're going to making a lot of
@@ -69,10 +69,14 @@ class MoveGenerator(object):
                     all_steps_with_traps = self.__updateBoard(all_steps)
                     
                     # If we're not currently in a push, we can print this step out.
-                    if not self.__nextMoveTypeStr(all_steps_with_traps) == Step.Step.MUST_PUSH:
-                        print all_steps_with_traps
-                        self.__displayBoard()
-			self.moves.append(self.board)
+                    if not self.__nextMoveTypeStr(all_steps) == Step.Step.MUST_PUSH:
+                        # Make this move actually changes the board state.
+                        if not self.board == self.original_board:
+                             print all_steps_with_traps
+                             self.__displayBoard()
+                             self.moves.append(self.board)
+                    else:
+                        pass
 
                     
                     self.genMoves(all_steps, start_row, start_col, end_row, end_col)
@@ -312,6 +316,7 @@ class MoveGenerator(object):
         
     
     def __nextMoveTypeStr(self, stepsStr):
+        stepsStr = stepsStr.strip()
         steps = []
         for step in stepsStr.split():
             step = Step.Step(step)
@@ -347,13 +352,16 @@ class MoveGenerator(object):
         # or just completing a pull.
         if last_step.color != self.color:
             
-            # We just completed a pull
+            # We just completed a pull or are in the middle of a push
             if len(steps) >= 2:
                 prev_step = steps[-2]
                 if prev_step.start_row == last_step.end_row:
                     if prev_step.start_col == last_step.end_col:
                         return Step.Step.REGULAR
-            # Or we're in the middle of a push
+                    else:
+                        return Step.Step.MUST_PUSH
+                else:
+                    return Step.Step.MUST_PUSH
             else:
                 return Step.Step.MUST_PUSH
         else:
