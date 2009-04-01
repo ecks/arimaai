@@ -13,6 +13,7 @@ import Step
 import Hash
 import Board
 import copy
+import bisect
 
 if __name__ == '__main__':
    
@@ -36,12 +37,33 @@ if __name__ == '__main__':
         generator = MoveGenerator.MoveGenerator(count, color, board)
         generator.genMoves(steps)
 	hash = Hash.Hash()
-	print board
 	b = Board.Board(board, hash.get_hash_board())
 	b.calculateHashkey()
-	# ----------------------
-	testStep = " Ea3n Ea4s"
-	b.updateBoard(testStep)
+	# list of already determined hash keys for board states
+	hashkeys = []
+	# list with moves that are not duplicates of each other
+	nonDupMoveStep = []
+	print "Before:"
+	for moveStep in generator.moveSteps:
+		(move,posSteps) = moveStep
+		print posSteps
+		b.displayBoard(move)
+		hashkey = b.computeHash(posSteps)
+		# if item not found, tell us where to insert it, otherwise tell us 
+		# that right in that index is the item
+		ins_pt = bisect.bisect_left(hashkeys,hashkey)
+		# short circuit for when we are appending to list
+		if len(hashkeys) == ins_pt or hashkey != hashkeys[ins_pt]:
+			# no duplicate entries
+			hashkeys.insert(ins_pt, hashkey)
+			nonDupMoveStep.append(moveStep)
+
+        print "After:"
+	for moveStep in nonDupMoveStep:
+	  print moveStep[1]
+	  b.displayBoard(moveStep[0])
+
+			
 #	b.updateHashKey(self.steps[0])
 #	sys.stderr.write(str(generator.steps[0]))
 #	sys.stderr.write(str(generator.moves[0]))

@@ -25,8 +25,7 @@ class MoveGenerator(object):
         self.count = count
         self.color = color
         self.board = board
-        self.moves = []
-	self.steps = []
+        self.moveSteps = []
         
         # Going to need to hold onto the original board
         # state because we're going to making a lot of
@@ -75,8 +74,7 @@ class MoveGenerator(object):
                         if not self.board == self.original_board:
            # block output for now                  print all_steps_with_traps
            #                  self.__displayBoard()
-                             self.moves.append(self.board)
-			     self.steps.append(all_steps_with_traps)
+                             self.moveSteps.append((self.board,all_steps_with_traps))
                     else:
                         pass
 
