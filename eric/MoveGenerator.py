@@ -26,6 +26,7 @@ class MoveGenerator(object):
         self.color = color
         self.board = board
         self.moves = []
+	self.steps = []
         
         # Going to need to hold onto the original board
         # state because we're going to making a lot of
@@ -72,9 +73,10 @@ class MoveGenerator(object):
                     if not self.__nextMoveTypeStr(all_steps) == Step.Step.MUST_PUSH:
                         # Make this move actually changes the board state.
                         if not self.board == self.original_board:
-                             print all_steps_with_traps
-                             self.__displayBoard()
+           # block output for now                  print all_steps_with_traps
+           #                  self.__displayBoard()
                              self.moves.append(self.board)
+			     self.steps.append(all_steps_with_traps)
                     else:
                         pass
 
@@ -113,8 +115,8 @@ class MoveGenerator(object):
         
         final_steps = ""
         for step in steps.split():
-            final_steps = final_steps + " " + step
-            step = Step.Step(step)
+            final_steps = final_steps + " " + step 
+	    step = Step.Step(step)
         
             piece = self.board[step.start_row][step.start_col]
             self.board[step.start_row][step.start_col] = " "

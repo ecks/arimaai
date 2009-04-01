@@ -39,9 +39,12 @@ if __name__ == '__main__':
 	print board
 	b = Board.Board(board, hash.get_hash_board())
 	b.calculateHashkey()
-#	sys.stderr.write(str(hash.get_hash_board()))
-#	for move in generator.moves:
-#		  generator.displayBoard(move)
+	# ----------------------
+	testStep = " Ea3n Ea4s"
+	b.updateBoard(testStep)
+#	b.updateHashKey(self.steps[0])
+#	sys.stderr.write(str(generator.steps[0]))
+#	sys.stderr.write(str(generator.moves[0]))
     else:
         print "File not found"
         
