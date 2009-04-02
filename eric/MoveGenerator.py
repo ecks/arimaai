@@ -9,6 +9,7 @@ import string
 import re
 import Step
 import copy
+import bisect
 
 class MoveGenerator(object):
 
@@ -22,12 +23,16 @@ class MoveGenerator(object):
     # @param color - whose turn is it (white or black)
     # @param board - the parsed board, 2 dimensional array.
     # @param hashkey - hashkey of the initial board state
-    def __init__(self, count, color, board, hashkey):
+    def __init__(self, count, color, board, hash):
         self.count = count
         self.color = color
         self.board = board
-	self.hashkey = hashkey
+	# this hashkey should never change
+	self.hash = hash
+	# the following hashkey may change
         self.moveSteps = []
+
+	self.hashkeys = []
         
         # Going to need to hold onto the original board
         # state because we're going to making a lot of
@@ -76,7 +81,16 @@ class MoveGenerator(object):
                         if not self.board == self.original_board:
            # block output for now                  print all_steps_with_traps
            #                  self.__displayBoard()
-                             self.moveSteps.append((self.board,all_steps_with_traps))
+	                     # get hashkey of move
+	                     hashkey = self.hash.getFinalHash()
+			     # if item not found, tell us where to insert it, otherwise tell us
+			     # that right in that index is the item
+			     ins_pt = bisect.bisect_left(self.hashkeys,hashkey)
+			     # short circuit for when we are appending to list
+			     if len(self.hashkeys) == ins_pt or hashkey != self.hashkeys[ins_pt]:
+				     # no duplicate entries
+                                     self.hashkeys.insert(ins_pt, hashkey)
+                                     self.moveSteps.append((self.board,all_steps_with_traps))
                     else:
                         pass
 
@@ -112,6 +126,10 @@ class MoveGenerator(object):
     # @param step - the step to change the board with
     # @return final_steps - the steps including trapped piece steps
     def __updateBoard(self, steps):
+        # needs to be called before using updateHashkey so that hashkey can reinitialize itself
+	# only needs to be reinitialized when not currently in a push
+	if not self.__nextMoveTypeStr(steps) == Step.Step.MUST_PUSH:
+	  self.hash.initTempHashKey()
         
         final_steps = ""
         for step in steps.split():
@@ -119,7 +137,17 @@ class MoveGenerator(object):
 	    step = Step.Step(step)
         
             piece = self.board[step.start_row][step.start_col]
+
+	    # need to know the piece before
+	    beforeMove = self.board[step.start_row][step.start_col]
+
             self.board[step.start_row][step.start_col] = " "
+	    
+            # need to know the piece after
+	    afterMove = self.board[step.start_row][step.start_col]
+
+	    # update old position
+	    self.hash.updateHashKey(step.start_row, step.start_col, beforeMove, afterMove)
             trapped_piece = ""
             
             # Is the piece in a trap square?
@@ -136,12 +164,16 @@ class MoveGenerator(object):
                 if not self.__isSafe(step.end_row, step.end_col):
                     trapped_piece = piece + "f3x"
             else:
+		beforeMove = self.board[step.end_row][step.end_col]
+
                 self.board[step.end_row][step.end_col] = step.piece
+
+		afterMove = self.board[step.end_row][step.end_col]
+		self.hash.updateHashKey(step.end_row, step.end_col, beforeMove, afterMove)
     
             
             if trapped_piece != "":
                 final_steps = final_steps + " " + trapped_piece
-        
         
         
         return final_steps

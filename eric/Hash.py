@@ -17,6 +17,8 @@ class Hash:
 	return value
 
   def __init__(self):
+	self.hashkey = 0
+	self.tempHashkey = self.hashkey
 	hash_board = self.hash_board
 	# don't feel like calling with self everytime
 	get_random_hashkey = self.get_random_hashkey
@@ -50,11 +52,23 @@ class Hash:
          hashkey = 0
 	 for i in range(LIMIT_ON_BOARD):
            for j in range(LIMIT_ON_BOARD):
-	     stringOfPos = self.board[i][j]
+	     stringOfPos = board[i][j]
 	     intValueOfPos = pieces[stringOfPos] # get the integer value of the pos in order to refer to it
 	     hashkey ^= self.hash_board[i][j][intValueOfPos] # get the actual hash code that we will use
-         return hashkey
+         self.hashkey = hashkey
 
- 	
+ 
+  def initTempHashKey(self):
+	 self.tempHashkey = self.hashkey
 
+  def updateHashKey(self, row, col, oldPiece, newPiece):
+	 intValOfOldPos = pieces[oldPiece]
+	 intValOfNewPos = pieces[newPiece]
+	 self.tempHashkey ^= self.hash_board[row][col][intValOfOldPos]
+	 self.tempHashkey ^= self.hash_board[row][col][intValOfNewPos]
+
+  def getFinalHash(self):
+	  retHashkey = self.tempHashkey
+	  self.initTempHashKey()
+	  return retHashkey
 
