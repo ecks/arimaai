@@ -138,16 +138,10 @@ class MoveGenerator(object):
         
             piece = self.board[step.start_row][step.start_col]
 
-	    # need to know the piece before
-	    beforeMove = self.board[step.start_row][step.start_col]
-
             self.board[step.start_row][step.start_col] = " "
 	    
-            # need to know the piece after
-	    afterMove = self.board[step.start_row][step.start_col]
-
 	    # update old position
-	    self.hash.updateHashKey(step.start_row, step.start_col, beforeMove, afterMove)
+	    self.hash.updateHashKey(step.start_row, step.start_col, piece, " ")
             trapped_piece = ""
             
             # Is the piece in a trap square?
