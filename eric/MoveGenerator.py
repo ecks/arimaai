@@ -158,12 +158,8 @@ class MoveGenerator(object):
                 if not self.__isSafe(step.end_row, step.end_col):
                     trapped_piece = piece + "f3x"
             else:
-		beforeMove = self.board[step.end_row][step.end_col]
-
                 self.board[step.end_row][step.end_col] = step.piece
-
-		afterMove = self.board[step.end_row][step.end_col]
-		self.hash.updateHashKey(step.end_row, step.end_col, beforeMove, afterMove)
+		self.hash.updateHashKey(step.end_row, step.end_col, " ", piece)
     
             
             if trapped_piece != "":
