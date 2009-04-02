@@ -21,10 +21,12 @@ class MoveGenerator(object):
     # @param count - the turn number
     # @param color - whose turn is it (white or black)
     # @param board - the parsed board, 2 dimensional array.
-    def __init__(self, count, color, board):
+    # @param hashkey - hashkey of the initial board state
+    def __init__(self, count, color, board, hashkey):
         self.count = count
         self.color = color
         self.board = board
+	self.hashkey = hashkey
         self.moveSteps = []
         
         # Going to need to hold onto the original board

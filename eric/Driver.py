@@ -34,11 +34,13 @@ if __name__ == '__main__':
         (count, color, steps, board) = parser.parse() # parse out the juicy stuff
         file.close()
         
-        generator = MoveGenerator.MoveGenerator(count, color, board)
+       	hash = Hash.Hash()
+	hashkey = hash.calculateHashkey(board)
+
+	generator = MoveGenerator.MoveGenerator(count, color, board, hashkey)
         generator.genMoves(steps)
-	hash = Hash.Hash()
-	b = Board.Board(board, hash.get_hash_board())
-	b.calculateHashkey()
+#	b = Board.Board(board, hash.get_hash_board())
+#	b.calculateHashkey()
 	# list of already determined hash keys for board states
 	hashkeys = []
 	# list with moves that are not duplicates of each other

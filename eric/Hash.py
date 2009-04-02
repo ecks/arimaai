@@ -46,4 +46,15 @@ class Hash:
   def get_hash_board(self):
 	return self.hash_board
 
+  def calculateHashkey(self, board):
+         hashkey = 0
+	 for i in range(LIMIT_ON_BOARD):
+           for j in range(LIMIT_ON_BOARD):
+	     stringOfPos = self.board[i][j]
+	     intValueOfPos = pieces[stringOfPos] # get the integer value of the pos in order to refer to it
+	     hashkey ^= self.hash_board[i][j][intValueOfPos] # get the actual hash code that we will use
+         return hashkey
+
+ 	
+
 
