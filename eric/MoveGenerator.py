@@ -9,6 +9,8 @@ import string
 import re
 import Step
 import copy
+import bisect
+import math
 
 class MoveGenerator(object):
 
@@ -21,16 +23,125 @@ class MoveGenerator(object):
     # @param count - the turn number
     # @param color - whose turn is it (white or black)
     # @param board - the parsed board, 2 dimensional array.
-    def __init__(self, count, color, board):
+    # @param hashkey - hashkey of the initial board state
+    def __init__(self, count, color, board, hash):
         self.count = count
         self.color = color
         self.board = board
+        # this hashkey should never change
+        self.hash = hash
+        # the following hashkey may change
         self.moveSteps = []
+
+        self.hashkeys = []
+        self.evaluations = []
         
         # Going to need to hold onto the original board
         # state because we're going to making a lot of
         # new boards.
         self.original_board = copy.deepcopy(self.board)
+
+    #Paul Abbazia
+    #boardState/board = 8x8 array containing the value of the piece in each position (negative for opponent's piece)
+    #alpha/beta = value
+    #depth = int
+    #turn = int, 1 = white, -1 = black
+    def negascout(self, depth, alpha, beta, board, turn):
+        if (depth == 0):
+            return self.evaluate(board, turn) #returns the strength value of the board
+
+        averages = self.boardStrength()
+        if turn == 1: #white's turn
+            pass
+        turnList = self.genMoves(self,[],0,0,7,7) #moveList contains a set of turns (containing move sets)
+
+
+        for moveList in turnList:
+            newBoard = makeMove(board, moveList)
+                    
+            val = -negascout(depth - 1, -beta, -alpha, newBoard, -turn) #descend one level and invert the function
+
+            if (val >= beta):
+                return beta
+            if (val > alpha):
+                alpha = val
+
+        return alpha    
+
+    #Paul Abbazia
+    #Evaluates the given board based on set criteria
+    #Board value is given by:
+    #Player gains pieceValue*distance across board for all pieces except rabbits
+    #Player gains pieceValue*distance^2 for rabbits
+    #Player 'gains' sum of own pieces - sum of enemy pieces
+    #@board the board state to evaluate
+    #@return the value of this board state
+    def evaluate(self, board):
+        value = 0
+        if self.color == 'white':
+            for col in range(0,8):
+                for row in range(0,8):
+                    piece = board[row,col]
+                    if piece >= 'A':
+                        value += self.__pieceValue(piece)
+                        if piece != 'R':
+                            value += self.__pieceValue(piece) * (row+1)
+                        elif piece == 'R':
+                            value += self.__pieceValue(piece) * (row+1)**2
+
+                    if piece < 'A':
+                        value -= self.__pieceValue(piece)
+        elif self.color == 'black':
+            for col in range(0,8):
+                for row in range(0,8):
+                    piece = board[row,col]
+                    if piece < 'A':
+                        value += self.__pieceValue(piece)
+                        if piece != 'r':
+                            value += self.__pieceValue(piece) * (row+1)
+                        elif piece == 'r':
+                            value += self.__pieceValue(piece) * (row+1)**2
+
+                    if piece >= 'A':
+                        value -= self.__pieceValue(piece)
+        return value
+            
+
+    #Paul Abbazia
+    #Computes a running average of piece values to narrow search space (a 4x4 grid is chosen to try to contain pieces that could potentially effect the area)
+    #Returns a list of two board states, one containing the strength of the white player, the other the black
+    def boardStrength(self):
+        white = copy.deepcopy(self.board)
+        black = copy.deepcopy(self.board)
+
+        for row in range(0,8):
+            for col in range(0,8):
+                indices = [] #the indices of the moves concerned
+                for x in range(-4,4): #subscript a 4x4 moving grid
+                    for y in range(-4,4):
+                        indices.append([math.abs(row + x), math.abs(col+y)])#take the absolute value to avoid going out of bounds
+                white[row,col] = average(indices,16,white,1)
+                black[row,col] = average(indices,16,white,-1)
+        return [white,black]
+
+    #Paul Abbazia
+    #Computes the average value of the given grid on the board
+    #@indices the points to average
+    #@gridSize the size of the grid being averaged
+    #@board the board concerned
+    #@player 1 for white, -1 for black
+    #@return the averaged position state
+    def average(self, indices,gridSize, board, player):
+        total = 0
+        for point in array2D:
+            piece  = board[point[0],point[1]]
+            if player == 1:
+                if piece >= A: #white piece
+                    total += self.__pieceValue(piece)
+            elif player == -1:
+                if piece < A: #black piece
+                    total += self.__pieceValue(piece)
+        return total/gridSize
         
     ##
     # Generates all possible moves in a given area.
@@ -74,7 +185,18 @@ class MoveGenerator(object):
                         if not self.board == self.original_board:
            # block output for now                  print all_steps_with_traps
            #                  self.__displayBoard()
-                             self.moveSteps.append((self.board,all_steps_with_traps))
+                             # get hashkey of move
+                             hashkey = self.hash.getFinalHash()
+                             # if item not found, tell us where to insert it, otherwise tell us
+                             # that right in that index is the item
+                             ins_pt = bisect.bisect_left(self.hashkeys,hashkey)
+                             # short circuit for when we are appending to list
+                             if len(self.hashkeys) == ins_pt or hashkey != self.hashkeys[ins_pt]:
+                                     # no duplicate entries
+                                     self.hashkeys.insert(ins_pt, hashkey)
+                                     self.moveSteps.append((self.board,all_steps_with_traps))
+                             #store the evaluation of the board state
+                             self.evaluations.insert(ins_pt,evaulate(self.board)) #get initial evaluations of each board state
                     else:
                         pass
 
@@ -110,14 +232,22 @@ class MoveGenerator(object):
     # @param step - the step to change the board with
     # @return final_steps - the steps including trapped piece steps
     def __updateBoard(self, steps):
+        # needs to be called before using updateHashkey so that hashkey can reinitialize itself
+        # only needs to be reinitialized when not currently in a push
+        if not self.__nextMoveTypeStr(steps) == Step.Step.MUST_PUSH:
+          self.hash.initTempHashKey()
         
         final_steps = ""
         for step in steps.split():
             final_steps = final_steps + " " + step 
-	    step = Step.Step(step)
+            step = Step.Step(step)
         
             piece = self.board[step.start_row][step.start_col]
+
             self.board[step.start_row][step.start_col] = " "
+            
+            # update old position
+            self.hash.updateHashKey(step.start_row, step.start_col, piece, " ")
             trapped_piece = ""
             
             # Is the piece in a trap square?
@@ -135,11 +265,11 @@ class MoveGenerator(object):
                     trapped_piece = piece + "f3x"
             else:
                 self.board[step.end_row][step.end_col] = step.piece
+                self.hash.updateHashKey(step.end_row, step.end_col, " ", piece)
     
             
             if trapped_piece != "":
                 final_steps = final_steps + " " + trapped_piece
-        
         
         
         return final_steps
