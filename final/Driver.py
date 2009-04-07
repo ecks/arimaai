@@ -27,17 +27,20 @@ if __name__ == '__main__':
     if os.path.exists(input) or os.path.isfile(input):
         file = open(input, 'r') # open file for reading
         parser = Parser.Parser(file) # construct new parser object.
-        (count, color, steps, board) = parser.parse() # Parse the file.
+        (turn, color, steps, board) = parser.parse() # Parse the file.
         file.close()
+
+        print "turn is "  + turn
+        print "color is " + color
          
-        if (count == "1"):
+        if (turn == "1"):
             print MoveGenerator.MoveGenerator.randSetup(color)
         else:
             hash = Hash.Hash()  # Construct a new hash
             hash.calculateHashkey(board)  # Calculate the hash key for this given board.
         
             # Generate all the possible moves for this board.
-            generator = MoveGenerator.MoveGenerator(count, color, board, hash)
+            generator = MoveGenerator.MoveGenerator(turn, color, board, hash)
 
             generator.genMoves(steps)
              
