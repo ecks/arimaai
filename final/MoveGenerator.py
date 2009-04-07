@@ -11,6 +11,8 @@ import bisect
 import Step
 import copy
 import Hash
+import random
+
  
 class MoveGenerator(object):
  
@@ -20,11 +22,11 @@ class MoveGenerator(object):
  
     ##
     # MoveGenerator constructor
-    # @param count - the turn number
+    # @param turn - the turn number
     # @param color - whose turn is it (white or black)
     # @param board - the parsed board, 2 dimensional array.
-    def __init__(self, count, color, board, hash):
-        self.count = count
+    def __init__(self, turn, color, board, hash):
+        self.turn = turn
         self.color = color
         self.board = board
  
@@ -51,8 +53,7 @@ class MoveGenerator(object):
     # @param end_row - the ending row of the given area
     # @param end_col - the ending column of the given area
     # @return If we have no more valid moves for a given recursive call.
-    def genMoves(self, steps_in, start_row = 0, start_col = 0, end_row = 7, end_col = 7):
-                
+    def genMoves(self, steps_in, start_row = 0, start_col = 0, end_row = 7, end_col = 7):            
         steps = []
         moves = []
         
@@ -227,7 +228,7 @@ class MoveGenerator(object):
         # Decrement number of steps left and determine what the last step was.
         # We need to know the last step for pushes and pulls.
         for step in steps:
-            if step.dir != "x":
+            if step.dir != "x" or step.dir != "X":
                 steps_left = steps_left - 1
                 last_step = step
         
@@ -348,7 +349,7 @@ class MoveGenerator(object):
         
         # Get rid of traps, not necessary for this
         for step in steps:
-            if step.dir == "x":
+            if step.dir == "x" or step.dir == "X":
                 steps.remove(step)
     
         
@@ -418,9 +419,9 @@ class MoveGenerator(object):
         positions = []
         
         if occupied:
-            expr = "[^ x]"
+            expr = "[^ xX]"
         else:
-            expr = "( |x)"
+            expr = "( |x|X)"
             
         
         # North
@@ -448,8 +449,8 @@ class MoveGenerator(object):
     # @param positions - list of positions generated from __getAdjacentPositions
     # @return positions - the same list of positions, or positions without a south direction.
     def __adjustRabbitPositions(self, piece, positions):
-        if piece == "R" or piece == "r":
-            del positions[1]
+        if (piece == "R" or piece == "r") and len(positions) >= 2:
+            del positions[1]    # index 1 is the south position
             
         return positions
     
@@ -474,7 +475,7 @@ class MoveGenerator(object):
         piece = piece.lower() # Make the piece lowercase.
         
         # Make the translation table for strengths
-        transTable = string.maketrans("emhdcrx", "6543210")
+        transTable = string.maketrans("emhdcrxX", "65432100")
         strength = string.translate(piece, transTable) # Translate the piece
         return strength
     
@@ -531,3 +532,24 @@ class MoveGenerator(object):
             steps.append(step)
         
         return steps
+
+
+    ##
+    # Generates a random starting position based on whose turn it is.
+    # These are predefined as good starting positions.
+    # @param color - whose color it is.
+    # @return setup - an optimal starting position.
+    @staticmethod
+    def randSetup(color):
+        if color == 'w' or color == 'g':
+            setup = ['Ee2 Md2 Ca1 Dc2 Hb2 Hg2 Ch1 Df2 Rb1 Rc1 Rd1 Re1 Rf1 Rg1 Ra2 Rh2',
+                     'Ee2 Md2 Da1 Hb2 Dh1 Hg2 Cf1 Cc1 Rb1 Rd1 Re1 Rg1 Ra2 Rc2 Rf2 Rh2',
+                     'Ee2 Md2 Hh2 Dg2 Db1 Ca2 He1 Cf1 Ra1 Rc1 Rd1 Rg1 Rh1 Rb2 Rc2 Rf2',
+                     'Ee2 Md2 Ha2 Hh2 Db2 Dg2 Cc2 Cf2 Ra1 Rb1 Rc1 Rd1 Re1 Rf1 Rg1 Rh1']
+        else:
+            setup = ['ee7 md7 ha7 hh7 db7 dg7 cf8 cc8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8',
+                     'ha7 hh7 dg7 me7 ed7 cc8 cf8 da8 rb7 rc7 rf7 rb8 rd8 re8 rg8 rh8',
+                     'ee7 md7 ha7 hh7 db7 dg7 cf8 cc8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8',
+                     'me7 ed7 ha7 hh7 db7 dg7 cc8 cf8 rc7 rf7 ra8 rb8 rd8 re8 rg8 rh8']
+ 
+        return setup[random.randint(0,3)]

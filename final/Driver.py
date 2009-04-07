@@ -10,6 +10,7 @@ import os.path
 import Parser
 import MoveGenerator
 import Hash 
+import random
  
 if __name__ == '__main__':
    
@@ -24,21 +25,27 @@ if __name__ == '__main__':
     
     # Does this input exists and is input a file (not a directory).
     if os.path.exists(input) or os.path.isfile(input):
-        print "Using file: " + input
         file = open(input, 'r') # open file for reading
         parser = Parser.Parser(file) # construct new parser object.
         (count, color, steps, board) = parser.parse() # Parse the file.
         file.close()
-
-        hash = Hash.Hash()  # Construct a new hash
-        hash.calculateHashkey(board)  # Calculate the hash key for this given board.
+         
+        if (count == "1"):
+            print MoveGenerator.MoveGenerator.randSetup(color)
+        else:
+            hash = Hash.Hash()  # Construct a new hash
+            hash.calculateHashkey(board)  # Calculate the hash key for this given board.
         
-        # Generate all the possible moves for this board.
-        generator = MoveGenerator.MoveGenerator(count, color, board, hash)
-        generator.genMoves(steps)
-     
-     
+            # Generate all the possible moves for this board.
+            generator = MoveGenerator.MoveGenerator(count, color, board, hash)
 
+            generator.genMoves(steps)
+             
+            moves = generator.moveSteps
+            move = moves[random.randint(0, len(moves) - 1)]
+            (board, posMove) = move
+            print posMove
+  
     else:
         print "File not found"
         
