@@ -20,7 +20,6 @@ class Evaluation(object):
     def negascout(self, depth, alpha, beta, board, color, steps, count, hash):
         if (depth == 0):
             return( (self.evaluate(board, color),steps))#returns the strength value of the board
-        a = alpha
         b = beta
         m=""
 	turnList = []
@@ -39,14 +38,13 @@ class Evaluation(object):
             if highCol > 7:
                 highCol = 7
 	    moveGen = MoveGenerator.MoveGenerator(count, color, board, hash)
-            moveGen.genMoves("",lowRow,lowCol,highRow,highCol) #moveList contains a set of turns (containing move sets)
+        #    moveGen.genMoves("",lowRow,lowCol,highRow,highCol) #moveList contains a set of turns (containing move sets)
+            moveGen.genMoves("") #moveList contains a set of turns (containing move sets)
 	    print lowRow
 	    print lowCol
 	    print highRow
 	    print highCol
 	    turnList = moveGen.moveSteps
-	    for turn in turnList:
-		    Common.displayBoard(turn[0])
         elif color == 'b': #black's turn
             lowRow = bestPos[0][0]-2
             lowCol = bestPos[0][1]-2
@@ -61,7 +59,8 @@ class Evaluation(object):
             if highCol > 7:
                 highCol = 7
             moveGen = MoveGenerator.MoveGenerator(count, color, board, hash)
-            moveGen.genMoves(steps,lowRow,lowCol,highRow,highCol) #moveList contains a set of turns (containing move sets)
+#            moveGen.genMoves(steps,lowRow,lowCol,highRow,highCol) #moveList contains a set of turns (containing move sets)
+            moveGen.genMoves("") #moveList contains a set of turns (containing move sets)
 	    turnList = moveGen.moveSteps
         for turn in turnList:
             newBoardState = turn[0]
@@ -79,7 +78,7 @@ class Evaluation(object):
 		    alpha = alpha * -1
 		    if alpha >= beta:
 		      return (alpha,n)
-            b = a + 1
+            b = alpha + 1
 #	    Common.displayBoard(newBoardState)
 #	    print(val)
 #            if val > alpha:
