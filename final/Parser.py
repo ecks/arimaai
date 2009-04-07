@@ -7,6 +7,8 @@ notation: http://arimaa.com/arimaa/learn/notation.html
 @author: et
 '''
  
+import re
+
 class Parser(object):
  
  
@@ -19,7 +21,7 @@ class Parser(object):
     ##
     # The parser method parses the file and returns the
     # necessary output.
-    # @return count - the turn number
+    # @return turn - the turn number
     # @return color - whose turn is it (white or black)
     # @return steps - the steps taken so far
     # @return board - the parsed board, 2 dimensional array.
@@ -27,11 +29,17 @@ class Parser(object):
         board = [[' ' for col in range (8)] for row in range(8)]
  
         line = self.file.readline()
-        count = line[0] # turn number
-        color = line[1] # white or black
+
+        expr = re.compile('\d+')
+        turn = expr.match(line).group() # turn number
+
+        expr = re.compile('\D')
+        color = expr.search(line).group() # white or black
         steps = ""
-        if len(line) >= 4:
-            steps = line[3:-1]
+
+        # if len(line) >= 4:
+        #     steps = line[3:-1]
+
         lines = self.file.readlines() # the rest of the lines
         
         del lines[0:1] # get rid of the +----+
@@ -64,4 +72,4 @@ class Parser(object):
             row = row + 1
             line_col = 3
         
-        return (count, color, steps, board)
+        return (turn, color, steps, board)

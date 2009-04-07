@@ -18,7 +18,7 @@ class MoveGenerator(object):
  
  
     # Most amount of steps we can make in a single turn.
-    MAX_STEPS = 4
+    MAX_STEPS = 2
  
     ##
     # MoveGenerator constructor
@@ -97,7 +97,7 @@ class MoveGenerator(object):
                                  # This is definitely not a duplicate entry.
                                  self.hashkeys.insert(ins_pt, hashkey)
                                  self.moveSteps.append((self.board, all_steps_with_traps))
-
+                                 print all_steps_with_traps
                     # Generate more moves with the updated board.
                     self.genMoves(all_steps, start_row, start_col, end_row, end_col)   
             
@@ -150,9 +150,7 @@ class MoveGenerator(object):
             
             if trapped_piece != "":
                 final_steps = final_steps + " " + trapped_piece
-        
-        
-        
+         
         return final_steps
     
     def __displayBoard(self):
@@ -248,7 +246,7 @@ class MoveGenerator(object):
                 col = pos[1]
                 piece = self.board[row][col]
                 color = Step.Step.pieceColor(piece)
-                if piece == " ":
+                if piece == " " or piece == "x" or piece == "X":
                     continue
                 # A piece can't move into it's friendly space.
                 elif color != last_step.color:
@@ -296,8 +294,8 @@ class MoveGenerator(object):
                             # Get all the occupied positions to the last step.
                             prev_adj_occ_pos = self.__getAdjacentPositions(last_step.start_row, last_step.start_col, True)
                             for prev_adj_pos in prev_adj_occ_pos:
-                                if piece_color != self.color:
-                                    if self.__isStronger(last_step.piece, piece):
+                                if piece_color != self.color and \
+                                   self.__isStronger(last_step.piece, piece):
                                         prev_adj_row = prev_adj_pos[0]
                                         prev_adj_col = prev_adj_pos[1]
                                         if row == prev_adj_row and col == prev_adj_col:
@@ -313,8 +311,8 @@ class MoveGenerator(object):
                                 adj_col = pos[1]
                                 adj_piece = self.board[adj_row][adj_col]
                                 adj_color = Step.Step.pieceColor(adj_piece)
-                                if adj_color == self.color:
-                                    if self.__isStronger(adj_piece, piece):
+                                if adj_color == self.color and \
+                                   self.__isStronger(adj_piece, piece):
                                         adj_piece_occ_pos = self.__getAdjacentPositions(adj_row, adj_col, True)
                                         if not self.__isFrozen(adj_piece, adj_piece_occ_pos):
                                             step = self.__makeStep(piece, row, col, unocc_adj_pos)
@@ -363,9 +361,11 @@ class MoveGenerator(object):
             # We just completed a pull
             if len(steps) >= 2:
                 prev_step = steps[-2]
-                if prev_step.start_row == last_step.end_row:
-                    if prev_step.start_col == last_step.end_col:
-                        return Step.Step.REGULAR
+                if prev_step.start_row == last_step.end_row  and \
+                   prev_step.start_col == last_step.end_col:
+                    return Step.Step.REGULAR
+                else:
+                        return Step.Step.MUST_PUSH
             # Or we're in the middle of a push
             else:
                 return Step.Step.MUST_PUSH
