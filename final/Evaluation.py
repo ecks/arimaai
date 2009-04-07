@@ -39,9 +39,14 @@ class Evaluation(object):
             if highCol > 7:
                 highCol = 7
 	    moveGen = MoveGenerator.MoveGenerator(count, color, board, hash)
-            moveGen.genMoves(steps,lowRow,lowCol,highRow,highCol) #moveList contains a set of turns (containing move sets)
-	 #   moveGen.genMoves(steps)
+            moveGen.genMoves("",lowRow,lowCol,highRow,highCol) #moveList contains a set of turns (containing move sets)
+	    print lowRow
+	    print lowCol
+	    print highRow
+	    print highCol
 	    turnList = moveGen.moveSteps
+	    for turn in turnList:
+		    Common.displayBoard(turn[0])
         elif color == 'b': #black's turn
             lowRow = bestPos[0][0]-2
             lowCol = bestPos[0][1]-2
@@ -63,20 +68,39 @@ class Evaluation(object):
             stepPerBoard = turn[1]
            # index = Hash(newBoardState)
             nextColor = string.maketrans("wb", "bw")
-            (val,m) = self.negascout(depth - 1, -beta, -alpha, newBoardState, string.translate(color, nextColor), stepPerBoard, count, hash) #descend one level and invert the function
-            val = val * -1
-	    if a > val and beta < val and turn != turnList[0]:
-		    (alpha,n) = NegaScout(depth - 1, -beta, -val, newBoardState, string.translate(color, nextColor), stepPerBoard, count, hash)
+            (a,m) = self.negascout(depth - 1, -b, -alpha, newBoardState, string.translate(color, nextColor), stepPerBoard, count, hash) #descend one level and invert the function
+            a = a * -1
+	    if a > alpha:
+	      alpha = a
+	    if alpha >= beta:
+	      return (alpha,m)
+	    if alpha >= b:
+		    (alpha,n) = self.negascout(depth - 1, -beta, -alpha, newBoardState, string.translate(color, nextColor), stepPerBoard, count, hash)
 		    alpha = alpha * -1
-	    Common.displayBoard(newBoardState)
-	    print(val)
-	    if (alpha >= beta):
-	    	return alpha;
-	    beta = alpha + 1
-            if (val >= beta):
-                return (beta,m)
-            if (val > alpha):
-                alpha = val
+		    if alpha >= beta:
+		      return (alpha,n)
+            b = a + 1
+#	    Common.displayBoard(newBoardState)
+#	    print(val)
+#            if val > alpha:
+#		    alpha = val
+#	    if alpha >= beta:
+#		    return (alpha,m)
+#	    beta = alpha + 1
+#	    if val >= beta:
+#	      return (beta,m)
+#            if val > alpha:
+#	      alpha = val
+
+
+
+#            if (alpha >= beta):
+#	    	return alpha;
+#	    beta = alpha + 1
+#            if (val >= beta):
+#                return (beta,m)
+#            if (val > alpha):
+#                alpha = val
         return (alpha,m)    
 
     #Paul Abbazia
