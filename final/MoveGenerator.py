@@ -7,8 +7,10 @@ Description: Generates all the possible moves given a board state.
  
 import string
 import re
+import bisect
 import Step
 import copy
+import Hash
  
 class MoveGenerator(object):
  
@@ -48,7 +50,7 @@ class MoveGenerator(object):
     # @param start_col - the starting column of the given area
     # @param end_row - the ending row of the given area
     # @param end_col - the ending column of the given area
-    # @return moves - a list of moves (a move is a list of steps)
+    # @return If we have no more valid moves for a given recursive call.
     def genMoves(self, steps_in, start_row = 0, start_col = 0, end_row = 7, end_col = 7):
                 
         steps = []
@@ -66,6 +68,8 @@ class MoveGenerator(object):
         
         prev_steps = "".join(steps_in) # if all items are strings
  
+        # If genSteps gave us no more valid moves left, then we need to
+        # escape this recursive call.
         if len(next_steps) <= 0:
             return
         else:
@@ -91,11 +95,10 @@ class MoveGenerator(object):
                              
                                  # This is definitely not a duplicate entry.
                                  self.hashkeys.insert(ins_pt, hashkey)
-                                 self.moveSteps.append(self.board, all_steps_with_traps)
+                                 self.moveSteps.append((self.board, all_steps_with_traps))
 
-                    self.genMoves(all_steps, start_row, start_col, end_row, end_col)
-                    
-             
+                    # Generate more moves with the updated board.
+                    self.genMoves(all_steps, start_row, start_col, end_row, end_col)   
             
     ##
     # Update the board with a new move.
@@ -116,11 +119,14 @@ class MoveGenerator(object):
             final_steps = final_steps + " " + step
             step = Step.Step(step)
 
-            # Update old position
+            # The piece we are trying to move
+            piece = self.board[step.start_row][step.start_col]
+
+            # Update the hash for this position.
             self.hash.updateHashKey(step.start_row, step.start_col, piece, " ")
 
-            piece = self.board[step.start_row][step.start_col]
-            self.board[step.start_row][step.start_col] = " "   # Delete the pieces starting position
+            # Delete the pieces starting position
+            self.board[step.start_row][step.start_col] = " "
             
             trapped_piece = ""
             # Is the piece in a trap square?
@@ -211,8 +217,6 @@ class MoveGenerator(object):
     # @param end_row - the ending row of the given area
     # @param end_col - the ending column of the given area
     # @return moves - a list of moves (a list of steps) we can make at this position.
-    # @return push - indicated with a dash (-) that we are in the process of doing a push
-    # and we must finish it.
     def __genSteps(self, steps, start_row, start_col, end_row, end_col):
         moves = []
         steps_left = MoveGenerator.MAX_STEPS

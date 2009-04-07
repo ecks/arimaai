@@ -1,443 +1,89 @@
 '''
-Filename: MoveGenerator.py
-Description: Generates all the possible moves given a board state.
- 
+Filename: Step.py
+Description: Step object to hold a step and pertinent information about the step.
+Steps come in the form of Ra2n, Dd2n, Rc3x, etc.
+
 @author: et
 '''
- 
+
 import string
-import re
-import Step
- 
-class MoveGenerator(object):
- 
- 
-    # Currently setting max steps to 2 so we can actually see the results finish.
-    MAX_STEPS = 2
- 
+
+class Step(object):
+
+    # Some pseudo enum types to be used for determining
+    # what the next move can/must be.
+    # See  __nextMoveType in MoveGenerator.py
+    REGULAR = 0
+    CAN_PULL = -1
+    MUST_PUSH = 1
+    CAPTURE = 2
+
     ##
-    # MoveGenerator constructor
-    # @param count - the turn number
-    # @param color - whose turn is it (white or black)
-    # @param board - the parsed board, 2 dimensional array.
-    def __init__(self, count, color, board):
-        self.count = count
-        self.color = color
-        self.board = board
+    # Constructor for a Step object.
+    # @param step - Arimaa step to be processed for our game. (something like Cc1n)
+    def __init__(self, step):
         
-        # Going to need to hold onto the original board
-        # state because we're going to making a lot of
-        # new boards.
-        self.original_board = board
+        self.arimaa_step = step
         
-    ##
-    # Generates all possible moves in a given area.
-    # @param steps_in - list of steps already taken (a move is a list of steps).
-    # @param start_row - the starting row of the given area
-    # @param start_col - the starting column of the given area
-    # @param end_row - the ending row of the given area
-    # @param end_col - the ending column of the given area
-    # @return moves - a list of moves (a move is a list of steps)
-    def genMoves(self, steps_in, start_row = 0, start_col = 0, end_row = 7, end_col = 7):
-                
-        steps = []
-        moves = []
+        if (step == ""):
+            return
         
-        # Construct Step objects out of all the previous steps
-        # taken.
-        for step_in in steps_in.split():
-            step = Step.Step(step_in)
-            steps.append(step)
+        self.piece = step[0:1]                # C
+        self.start_col = step[1:2]            # c
+        self.start_row = step[2:3]            # 1
+        self.dir = step[3:4]                  # n
         
-        # Next steps are all the steps that are possible given the starting steps
-        # from steps_in. The steps are sorted by which piece you attempt to move.
-        next_steps = self.__genSteps(steps, start_row, start_col, end_row, end_col)
+        # Get the correct color.
+        self.color = Step.pieceColor(self.piece)
         
-        prev_steps = "".join(steps_in) # if all items are strings
- 
-        if len(next_steps) <= 0:
-            moves.append(prev_steps)
-        else:
-            for steps in next_steps:
-                for step in steps:
-                    self.__updateBoard("".join(step))
-                    allSteps = prev_steps + " " + "".join(step)
-                    
-                    # If we're not currently in a push, we can print this step out.
-                    if not self.__nextMoveTypeStr(allSteps) == Step.Step.MUST_PUSH:
-                        print allSteps
- 
-                        
-                    self.genMoves(allSteps, start_row, start_col, end_row, end_col)
-                    self.board = self.original_board
- 
-            
-            
-    ##
-    # Update the board with a new move.
-    # @param step - the step to change the board with
-    def __updateBoard(self, step):
-        step = Step.Step(step)
-        self.board[step.start_row][step.start_col] = " "
+        # Make the translation table for columns
+        transTable = string.maketrans("abcdefgh", "12345678")
+        self.start_col = string.translate(self.start_col, transTable)  # Translate the column
+        
+        # Our notation is flipped from the Arimaa board.
+        # Also we start at 0 not 1.
+        self.start_row = 8 - int(self.start_row)
+        self.start_col = int(self.start_col) - 1
+        
+        self.end_row = self.start_row
+        self.end_col = self.start_col
+        
+        if self.dir == "n":
+            self.end_row = self.end_row - 1
+        elif self.dir == "s":
+            self.end_row = self.end_row + 1
+        elif self.dir == "w":
+            self.end_col = self.end_col - 1
+        elif self.dir == "e":
+            self.end_col = self.end_col + 1
+        elif self.dir == "x":                  # Removal of piece
+            self.end_row = -1
+            self.end_col = -1
+        elif self.dir == "":                   # Initial placement of piece
+            self.start_row = -1
+            self.start_col = -1
         
         
-        # Is the piece in a trap square?
-        if step.end_row == 2 and step.end_col == 2:
-            if not self.__isSafe(step.end_row, step.end_col):
-                self.board[step.end_row][step.end_col] = " "
-        elif step.end_row == 2 and step.end_col == 5:
-            if not self.__isSafe(step.end_row, step.end_col):
-                self.board[step.end_row][step.end_col] = " "
-        elif step.end_row == 5 and step.end_col == 2:
-            if not self.__isSafe(step.end_row, step.end_col):
-                self.board[step.end_row][step.end_col] = " "
-        elif step.end_row == 5 and step.end_col == 5:
-            if not self.__isSafe(step.end_row, step.end_col):
-                self.board[step.end_row][step.end_col] = " "
-        else:
-            self.board[step.end_row][step.end_col] = step.piece
+        self.type = Step.REGULAR
+        
     
     ##
-    # Simply returns whether or not a piece has a friendly
-    # piece next to it in an adjacent square. Used to check
-    # trap squares.
-    # @param row - the row
-    # @param col - the column
-    # @return True if it's safe, False otherwise.
-    def __isSafe(self, row, col):
-        adj_occ_pos = self.__getAdjacentPositions(row, col, True)
-        for pos in adj_occ_pos:
-            adj_row = pos[0]
-            adj_col = pos[1]
-            adj_piece = self.board[adj_row][adj_col]
-            piece = self.board[adj_row][adj_col]
-            if self.__areFriends(adj_piece, piece):
-                return True
-        
-        return False
-            
-    
-    ##
-    # Determines if two pieces are on the same team.
-    # @param pieceA - the first piece
-    # @param pieceB - the second piece
-    # @return True if they are friends, False if they are enemies
-    def __areFriends(self, pieceA, pieceB):
-        if pieceA.isupper() and pieceB.isupper or pieceA.islower() and pieceB.islower():
-            return True
-        else:
-            return False
-            
-    
-                
-    
-    ##
-    # Generates a list of steps given 0 or more previous steps.
-    # @param steps - a list of steps to be processed before new ones can be generated.
-    # @param start_row - the starting row of the given area
-    # @param start_col - the starting column of the given area
-    # @param end_row - the ending row of the given area
-    # @param end_col - the ending column of the given area
-    # @return moves - a list of moves (a list of steps) we can make at this position.
-    # @return push - indicated with a dash (-) that we are in the process of doing a push
-    # and we must finish it.
-    def __genSteps(self, steps, start_row, start_col, end_row, end_col):
-        moves = []
-        steps_left = 2
-        last_step = Step.Step("")
-        push = ""
-        
-        # Go through all the previous steps.
-        # Decrement number of steps left and determine what the last step was.
-        # We need to know the last step for pushes and pulls.
-        for step in steps:
-            if step.dir != "x":
-                steps_left = steps_left - 1
-                last_step = step
-        
-        if steps_left <= 0:
-            return moves
-        
-        # Next move type gives information about what the next step can/must be
-        next_move_type = self.__nextMoveType(steps)
-        
-        # If we're in the process of making a push, we have to complete the push.
-        # Multiple pieces could move into that position, just as long as their
-        # stronger and aren't on the same team.
-        if next_move_type == Step.Step.MUST_PUSH:
-            occ_adj_pos = self.__getAdjacentPositions(last_step.start_row, last_step.start_col, True)
-            for pos in occ_adj_pos:
-                row = pos[0]
-                col = pos[1]
-                piece = self.board[row][col]
-                color = Step.Step.pieceColor(piece)
-                if piece == " ":
-                    continue
-                # A piece can't move into it's friendly space.
-                elif color != last_step.color:
-                    # See if this piece is stronger than the one that was just moved
-                    if self.__isStronger(piece, last_step.piece):
-                        
-                        # Can this piece even move? Or is it frozen.
-                        piece_occ_adj_pos = self.__getAdjacentPositions(row, col, True)
-                        if not self.__isFrozen(piece, piece_occ_adj_pos):
-                            step = self.__makeStep(piece, row, col, [[last_step.start_row, last_step.start_col]])
-                            moves.append(step)
-                            
-        # Were not completing a push, we are free to do what we want
-        else:
-            for row in range(start_row, end_row + 1):
-                for col in range(start_col, end_col + 1):
-                    piece = self.board[row][col]
-    
-                    # Don't care for blank spaces or trap squares
-                    if piece == " " or re.match("x", piece, re.IGNORECASE):
-                        continue
-                                    
-                    piece_color = Step.Step.pieceColor(piece)
-                    
-                    # Get all the unoccupied and occupied adjacent positions to this piece
-                    unocc_adj_pos = self.__getAdjacentPositions(row, col, False)
-                    occ_adj_pos = self.__getAdjacentPositions(row, col, True)
-                    
-                    # Only generate moves for the current player
-                    if piece_color == self.color:
-    
-                        # Is the piece NOT frozen
-                        if not self.__isFrozen(piece, occ_adj_pos):
-                            step = self.__makeStep(piece, row, col, unocc_adj_pos)
-                            moves.append(step)
-                            
-                    # If we're here, then we found the opponent piece.
-                    # Lets see if we can push or pull it.
-                    else:
-                        
-                        # Try doing a pull if the last move we did can initialize a pull.
-                        if (next_move_type == Step.Step.CAN_PULL):
-                            
-                            # Get all the occupied positions to the last step.
-                            prev_adj_occ_pos = self.__getAdjacentPositions(last_step.start_row, last_step.start_col, True)
-                            for prev_adj_pos in prev_adj_occ_pos:
-                                if piece_color != self.color:
-                                    if self.__isStronger(last_step.piece, piece):
-                                        prev_adj_row = prev_adj_pos[0]
-                                        prev_adj_col = prev_adj_pos[1]
-                                        if row == prev_adj_row and col == prev_adj_col:
-                                            step = self.__makeStep(piece, row, col, [[last_step.start_row, last_step.start_col]])
-                                            moves.append(step)
-                                            
-                                        
-                        
-                        # Try performing a push on this piece.
-                        if (steps_left >= 2):
-                            for pos in occ_adj_pos:
-                                adj_row = pos[0]
-                                adj_col = pos[1]
-                                adj_piece = self.board[adj_row][adj_col]
-                                adj_color = Step.Step.pieceColor(adj_piece)
-                                if adj_color == self.color:
-                                    if self.__isStronger(adj_piece, piece):
-                                        adj_piece_occ_pos = self.__getAdjacentPositions(adj_row, adj_col, True)
-                                        if not self.__isFrozen(adj_piece, adj_piece_occ_pos):
-                                            step = self.__makeStep(piece, row, col, unocc_adj_pos)
-                                            moves.append(step)
-                                
-                
-        return moves
-        
-    
-    def __nextMoveTypeStr(self, stepsStr):
-        steps = []
-        for step in stepsStr.split():
-            step = Step.Step(step)
-            steps.append(step)
-        
-        return self.__nextMoveType(steps)
-    
-    ##
-    # Determines what the next move type can/must be.
-    # This is based off the last one or two steps taken.
-    # For example, if the last step taken was
-    # rb3e and it's white's turn, then we're in the process of
-    # doing a push. We have to push on the next turn.
-    # If the last step taken was something that could
-    # result in a pull on the next turn we should note that too.
-    # @param steps - the list of steps taken.
-    # @return REGULAR, PUSH, PULL
-    def __nextMoveType(self, steps):
-        
-        if len(steps) <= 0:
-            return Step.Step.REGULAR
-        
-        # Get rid of traps, not necessary for this
-        for step in steps:
-            if step.dir == "x":
-                steps.remove(step)
-    
-        
-        last_step = steps[-1]
- 
-        
-        # We may be in the process of doing a push
-        # or just completing a pull.
-        if last_step.color != self.color:
-            
-            # We just completed a pull
-            if len(steps) >= 2:
-                prev_step = steps[-2]
-                if prev_step.start_row == last_step.end_row:
-                    if prev_step.start_col == last_step.end_col:
-                        return Step.Step.REGULAR
-            # Or we're in the middle of a push
-            else:
-                return Step.Step.MUST_PUSH
-        else:
-            # Get all the occupied adjacent positions to see if we can attempt a pull.
-            adj_pos = self.__getAdjacentPositions(last_step.start_row, last_step.start_col, True)
-            for pos in adj_pos:
-                row = pos[0]
-                col = pos[1]
-                other_piece = self.board[row][col]
-                # Ensure that the piece we are trying to pull is not our own.
-                if Step.Step.pieceColor(other_piece) != self.color:
-                    # Now are we actually stronger than that piece
-                    if self.__isStronger(last_step.piece, other_piece):
-                        return Step.Step.CAN_PULL
-        
-        return Step.Step.REGULAR
-            
-    
-    ##
-    # Returns whether this piece is frozen.
+    # Piece info returns the piece and it's color (white or black)
+    # based on whether it's upper case or lower case.
+    # If it's a blank space, color is returned as nothing.
     # @param piece - the piece
-    # @param adj_pos - the adjacent positions to this piece
-    # @return True if the piece is frozen, False otherwise
-    def __isFrozen(self, piece, adj_pos):
-        for pos in adj_pos:
-            adj_row = pos[0]
-            adj_col = pos[1]
-            adj_piece = self.board[adj_row][adj_col]
-            
-            if adj_piece == " ":
-                continue
-            elif adj_piece.isupper() and piece.isupper():
-                continue
-            elif adj_piece.islower() and piece.islower():
-                continue
-            elif self.__isStronger(adj_piece, piece):
-                return True
-        
-        return False
-        
-    ##
-    # Returns all the adjacent positions (north, south, east, west),
-    # that are on the board, to this piece.
-    # @param row - the piece's row
-    # @param col - the pieces's column
-    # @param occupied - True to return only occupied space, False to return empty spaces.
-    # @return pieces - the positions adjacent to this piece
-    def __getAdjacentPositions(self, row, col, occupied):
-        
-        positions = []
-        
-        if occupied:
-            expr = "[^ x]"
+    # @return color - the piece's color            
+    def pieceColor(piece):
+        if piece == " ":
+            color = " "
+        elif piece.isupper():
+            color = "w"
         else:
-            expr = "( |x)"
+            color = "b"
         
-        # North
-        if row - 1 >= 0 and re.match(expr, self.board[row-1][col], re.IGNORECASE):
-            positions.append([row - 1, col])
-        
-        # South
-        if row + 1 <= 7 and re.match(expr, self.board[row+1][col], re.IGNORECASE):
-            positions.append([row + 1, col])
-        
-        # West
-        if col - 1 >= 0 and re.match(expr, self.board[row][col-1], re.IGNORECASE):
-            positions.append([row, col - 1])
-        
-        # East
-        if col + 1 <= 7 and re.match(expr, self.board[row][col+1], re.IGNORECASE):
-            positions.append([row, col + 1])
-        
-        return positions
+        return color
     
+    def __str__(self):
+        return self.arimaa_step
     
-    ##
-    # Returns whether or not the first piece
-    # is stronger than the second piece.
-    # @param a - the first piece
-    # @param b - the second piece
-    # @return True if the a is stronger than b, False otherwise
-    def __isStronger(self, a, b):
-        a = self.__pieceValue (a)
-        b = self.__pieceValue (b)
-        return (a > b)
-        pass
-    
-    ##
-    # Returns the strength value of a given piece.
-    # @param piece - the piece
-    # @param strength - the piece's strength
-    def __pieceValue(self, piece):
-        piece = piece.lower() # Make the piece lowercase.
-        
-        # Make the translation table for strengths
-        transTable = string.maketrans("emhdcrx", "6543210")
-        strength = string.translate(piece, transTable) # Translate the piece
-        return strength
-    
-    ##
-    # Constructs a step in proper notation
-    # given a list of positions a piece can move into.
-    # @param piece - the piece to move
-    # @param row - the piece's current row
-    # @param col - the piece's current column
-    # @param adj_pos - the list of adjacent positions to move into.
-    def __makeStep(self, piece, row, col, adj_pos):
-        
-        steps = []
-        
-        for pos in adj_pos:
-            
-            piece_row = row
-            piece_col = col
-            
-            adj_row = pos[0]
-            adj_col = pos[1]
-            
-            # Moving north
-            if adj_row < piece_row:
-                dir = "n"
-            
-            # Moving south
-            elif adj_row > piece_row:
-                dir = "s"
-            
-            # Moving west
-            elif adj_col < piece_col:
-                dir = "w"
-            
-            # Moving east
-            elif adj_col > piece_col:
-                dir = "e"
-            
-            
-            # Arimaa notation starts at 1, not 0
-            piece_row = piece_row + 1
-            piece_col = piece_col + 1
-            
-            # Arimaa notation for rows is flipped upside down.
-            piece_row = 9 - piece_row
-            
-                
-            # Make the translation table for columns
-            transTable = string.maketrans("12345678", "abcdefgh")
-            piece_col_letter = string.translate(repr(piece_col), transTable) # Translate the column
-            
-            step = piece + piece_col_letter + repr(piece_row) + dir
-            
-            steps.append(step)
-        
-        return steps
+    pieceColor = staticmethod(pieceColor)

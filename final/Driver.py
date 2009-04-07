@@ -9,8 +9,7 @@ import sys
 import os.path
 import Parser
 import MoveGenerator
-import Step
- 
+import Hash 
  
 if __name__ == '__main__':
    
@@ -28,11 +27,18 @@ if __name__ == '__main__':
         print "Using file: " + input
         file = open(input, 'r') # open file for reading
         parser = Parser.Parser(file) # construct new parser object.
-        (count, color, steps, board) = parser.parse() # parse out the juicy stuff
+        (count, color, steps, board) = parser.parse() # Parse the file.
         file.close()
+
+        hash = Hash.Hash()  # Construct a new hash
+        hash.calculateHashkey(board)  # Calculate the hash key for this given board.
         
-        generator = MoveGenerator.MoveGenerator(count, color, board)
+        # Generate all the possible moves for this board.
+        generator = MoveGenerator.MoveGenerator(count, color, board, hash)
         generator.genMoves(steps)
+     
+     
+
     else:
         print "File not found"
         
