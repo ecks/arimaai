@@ -148,7 +148,7 @@ class Board:
         
         return positions
  
-    def displayBoard(self, b):
+     def displayBoard(self, b):
          print " ",
          for letter in range(97, 105):
              print chr(letter),
