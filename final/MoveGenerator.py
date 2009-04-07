@@ -97,7 +97,7 @@ class MoveGenerator(object):
                                  # This is definitely not a duplicate entry.
                                  self.hashkeys.insert(ins_pt, hashkey)
                                  self.moveSteps.append((self.board, all_steps_with_traps))
-
+                                 print all_steps_with_traps
                     # Generate more moves with the updated board.
                     self.genMoves(all_steps, start_row, start_col, end_row, end_col)   
             
