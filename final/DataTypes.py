@@ -1,3 +1,10 @@
+'''
+Filename: DataTypes.py
+Description: These are global fields that Hash.py use.
+
+@author: Hristo Asenov
+'''
+
 # each piece corresponds to a unique value
 GOLD = 0 
 SILVER = 6
@@ -12,7 +19,7 @@ MAX_COMBOS = (SILVER + ELEPHANT) + 1
 LIMIT_ON_BOARD = 8
 
 pieces = {' ' : EMPTY,
-	  'x' : EMPTY,
+	  'X' : EMPTY,
           'E' : GOLD+ELEPHANT,
           'e' : SILVER+ELEPHANT,
                

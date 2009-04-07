@@ -14,8 +14,11 @@ class Hash:
   hash_board = [[' ' for col in range(LIMIT_ON_BOARD)] for row in range(LIMIT_ON_BOARD)]  
 
   ##
-  # Hash constructor - initializes three-dimensional list, the two dimensions being row and column, the third dimension being all the possible pieces that 
-  #                    could be placed inside that position. every item in the list has a very random hashkey
+  # Hash constructor
+  # Initializes three-dimensional list, the two dimensions 
+  # being row and column, the third dimension being all 
+  # the possible pieces that could be placed inside that position. 
+  # Every item in the list has a very random hashkey
   def __init__(self):
 	self.hashkey = 0
 	self.tempHashkey = self.hashkey
@@ -24,7 +27,9 @@ class Hash:
 	get_random_hashkey = self.get_random_hashkey
 	for i in range(LIMIT_ON_BOARD):
 	  for j in range(LIMIT_ON_BOARD):
-	    # the following statement gives us an extra dimension, filled with 0s the length of MAX_COMBOS, needed to make every possible combination of pieces
+	    # The following statement gives us an extra dimension, 
+            # filled with 0s the length of MAX_COMBOS, 
+            # needed to make every possible combination of pieces
 	    hash_board[i][j] = map(lambda x : x, itertools.repeat(0,MAX_COMBOS))
 
 	for i in range(LIMIT_ON_BOARD):
@@ -66,7 +71,8 @@ class Hash:
 
 
   ## 
-  # Gives a final seeder value of the initial board. Should be called right after initializing the Hash object. 
+  # Gives a final seeder value of the initial board. 
+  # Should be called right after initializing the Hash object. 
   # @param board - two-dimensional list of the moves
   # @return hashkey - unique key that represents the initial board state
   def calculateHashkey(self, board):
@@ -74,19 +80,29 @@ class Hash:
 	 for i in range(LIMIT_ON_BOARD):
            for j in range(LIMIT_ON_BOARD):
 	     stringOfPos = board[i][j]
-	     intValueOfPos = pieces[stringOfPos] # get the integer value of the pos in order to refer to it
-	     hashkey ^= self.hash_board[i][j][intValueOfPos] # get the actual hash code that we will use
+             
+             # Get the integer value of the pos in order to refer to it.
+	     intValueOfPos = pieces[stringOfPos]
+
+             # Get the actual hash code that we will use.
+             # ^= is the equivalent to an xor.
+	     hashkey ^= self.hash_board[i][j][intValueOfPos] 
+
          self.hashkey = hashkey
 
 
   ##
-  # Resets the working hashkey to the original hashkey. This is necessary when we are generating a hashkey from the initial board, since we need to go 
+  # Resets the working hashkey to the original hashkey. 
+  # This is necessary when we are generating a hashkey 
+  # from the initial board, since we need to go 
   # back to the original hash
   def initTempHashKey(self):
 	 self.tempHashkey = self.hashkey
 
   ##
-  # Called when making an actual move. The old and new pieces are xored with the current hashkey in order to record the new position
+  # Called when making an actual move. 
+  # The old and new pieces are xored with the current 
+  # hashkey in order to record the new position
   # @param row - the x coordinate
   # @param col - the y coordinate
   # @param oldPiece - the old piece to xor the current board state with
@@ -98,7 +114,8 @@ class Hash:
 	 self.tempHashkey ^= self.hash_board[row][col][intValOfNewPos]
 
   ##
-  # Should be called at the end, when the move is done. This returns the working hashkey and resets it to the original hashkey
+  # Should be called at the end, when the move is done. 
+  # This returns the working hashkey and resets it to the original hashkey
   # @return retHashkey - the working hashkey generated so far
   def getFinalHash(self):
 	  retHashkey = self.tempHashkey

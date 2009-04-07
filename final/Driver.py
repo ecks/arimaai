@@ -10,6 +10,7 @@ import os.path
 import Parser
 import Evaluation
 import Hash 
+import random
  
 if __name__ == '__main__':
    
@@ -24,7 +25,6 @@ if __name__ == '__main__':
     
     # Does this input exists and is input a file (not a directory).
     if os.path.exists(input) or os.path.isfile(input):
-        print "Using file: " + input
         file = open(input, 'r') # open file for reading
         parser = Parser.Parser(file) # construct new parser object.
         (count, color, steps, board) = parser.parse() # Parse the file.
@@ -41,7 +41,6 @@ if __name__ == '__main__':
 #        generator.genMoves(steps)
      
      
-
     else:
         print "File not found"
         

@@ -72,7 +72,8 @@ class Step(object):
     # based on whether it's upper case or lower case.
     # If it's a blank space, color is returned as nothing.
     # @param piece - the piece
-    # @return color - the piece's color            
+    # @return color - the piece's color 
+    @staticmethod           
     def pieceColor(piece):
         if piece == " ":
             color = " "
@@ -82,8 +83,8 @@ class Step(object):
             color = "b"
         
         return color
-    
+   
+    ##
+    # A string representation of this step. 
     def __str__(self):
         return self.arimaa_step
-    
-    pieceColor = staticmethod(pieceColor)
