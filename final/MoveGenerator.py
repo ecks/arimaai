@@ -21,10 +21,20 @@ class MoveGenerator(object):
     # @param count - the turn number
     # @param color - whose turn is it (white or black)
     # @param board - the parsed board, 2 dimensional array.
-    def __init__(self, count, color, board):
+    def __init__(self, count, color, board, hash):
         self.count = count
         self.color = color
         self.board = board
+ 
+        # An object of class Hash.
+        self.hash = hash  
+
+        # moveSteps is a list of tuples.
+        # Each tuple contains a new board state and the steps that were
+        # taken to get there from the original board state.
+        self.moveSteps = []
+
+        self.hashkeys = []
         
         # Going to need to hold onto the original board
         # state because we're going to making a lot of
@@ -69,30 +79,50 @@ class MoveGenerator(object):
                     
                     # If we're not currently in a push, we can print this step out.
                     if not self.__nextMoveTypeStr(all_steps_with_traps) == Step.Step.MUST_PUSH:
-                        print all_steps_with_traps
-                        self.__displayBoard()
- 
-                    
+		        if not self.board == self.original_board:
+                            hashkey = self.hash.getFinalHash()
+
+                            # If item not found, tell us where to insert it,
+                            # otherwise tell us that right in that index is the item
+                            ins_pt = bisect.bisect_left(self.hashkeys,hashkey) 
+                              
+                            # short circuit for when we are appending to list
+                            if len(self.hashkeys) == ins_pt or hashkey != self.hashkeys[ins_pt]:             
+                             
+                                 # This is definitely not a duplicate entry.
+                                 self.hashkeys.insert(ins_pt, hashkey)
+                                 self.moveSteps.append(self.board, all_steps_with_traps)
+
                     self.genMoves(all_steps, start_row, start_col, end_row, end_col)
                     
- 
-            
+             
             
     ##
     # Update the board with a new move.
     # @param step - the step to change the board with
     # @return final_steps - the steps including trapped piece steps
     def __updateBoard(self, steps):
+ 
+        # Needs to be called before using updateHashkey so that hashkey can reinitialize itself
+        # Only needs to be reinitialized when not currently in a push
+        if not self.__nextMoveTypeStr(steps) == Step.Step.MUST_PUSH:
+           self.hash.initTempHashKey()
         
+        
+        # The steps with any traps done.
         final_steps = ""
+        
         for step in steps.split():
             final_steps = final_steps + " " + step
             step = Step.Step(step)
-        
+
+            # Update old position
+            self.hash.updateHashKey(step.start_row, step.start_col, piece, " ")
+
             piece = self.board[step.start_row][step.start_col]
-            self.board[step.start_row][step.start_col] = " "
-            trapped_piece = ""
+            self.board[step.start_row][step.start_col] = " "   # Delete the pieces starting position
             
+            trapped_piece = ""
             # Is the piece in a trap square?
             if step.end_row == 2 and step.end_col == 2:
                 if not self.__isSafe(step.end_row, step.end_col):
@@ -107,8 +137,9 @@ class MoveGenerator(object):
                 if not self.__isSafe(step.end_row, step.end_col):
                     trapped_piece = piece + "f3x"
             else:
-                self.board[step.end_row][step.end_col] = step.piece
-    
+                # Put this piece in its new place
+                self.board[step.end_row][step.end_col] = step.piece 
+                self.hash.updateHashKey(step.end_row, step.end_col, " ", piece)    
             
             if trapped_piece != "":
                 final_steps = final_steps + " " + trapped_piece
