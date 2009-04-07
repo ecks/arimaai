@@ -36,7 +36,7 @@ class MoveGenerator(object):
         # moveSteps is a list of tuples.
         # Each tuple contains a new board state and the steps that were
         # taken to get there from the original board state.
-        self.moveSteps = []
+        self.moveStepHashes = []
 
         self.hashkeys = []
         
@@ -96,7 +96,7 @@ class MoveGenerator(object):
                              
                                  # This is definitely not a duplicate entry.
                                  self.hashkeys.insert(ins_pt, hashkey)
-                                 self.moveSteps.append((self.board, all_steps_with_traps))
+                                 self.moveStepHashes.append((self.board, all_steps_with_traps, hashkey))
                                  print all_steps_with_traps
                     # Generate more moves with the updated board.
                     self.genMoves(all_steps, start_row, start_col, end_row, end_col)   

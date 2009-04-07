@@ -3,10 +3,11 @@ import MoveGenerator
 import math
 import copy
 import string
+import bisect
 
 class Evaluation(object):
 
-    hashkeys = []
+    hashkeysEvalsSteps = []
     evaluations = []
 
     def __init__(self):
@@ -19,7 +20,10 @@ class Evaluation(object):
     #turn = char, 'w' = white, 'b' = black
     def negascout(self, depth, alpha, beta, board, color, steps, count, hash):
         if (depth == 0):
-            return( (self.evaluate(board, color),steps))#returns the strength value of the board
+            eval = self.evaluate(board, color)#returns the strength value of the board
+	    self.hashkeysEvalsSteps.append((hash.get_hashkey(),eval,steps)) 
+	    self.hashkeysEvalsSteps.sort() # warning !!! may not be the best way to do this !!!
+	    return (eval,steps)
         b = beta
         m=""
 	turnList = []
@@ -44,7 +48,7 @@ class Evaluation(object):
 	    print lowCol
 	    print highRow
 	    print highCol
-	    turnList = moveGen.moveSteps
+	    turnList = moveGen.moveStepHashes
         elif color == 'b': #black's turn
             lowRow = bestPos[0][0]-2
             lowCol = bestPos[0][1]-2
@@ -61,14 +65,23 @@ class Evaluation(object):
             moveGen = MoveGenerator.MoveGenerator(count, color, board, hash)
 #            moveGen.genMoves(steps,lowRow,lowCol,highRow,highCol) #moveList contains a set of turns (containing move sets)
             moveGen.genMoves("") #moveList contains a set of turns (containing move sets)
-	    turnList = moveGen.moveSteps
+	    turnList = moveGen.moveStepHashes
         for turn in turnList:
             newBoardState = turn[0]
             stepPerBoard = turn[1]
-           # index = Hash(newBoardState)
-            nextColor = string.maketrans("wb", "bw")
-            (a,m) = self.negascout(depth - 1, -b, -alpha, newBoardState, string.translate(color, nextColor), stepPerBoard, count, hash) #descend one level and invert the function
-            a = a * -1
+	    hashForBoard = turn[2]
+	    # reset from initial board hash to new board hash
+	    hash.resetInitialHashKey(hashForBoard)
+	    currentHashKeys = map(lambda x: x[0], self.hashkeysEvalsSteps)
+	    ins_pt = bisect.bisect_left(currentHashKeys, hashForBoard)
+            if len(currentHashKeys) == ins_pt or hashForBoard != currentHashKeys[ins_pt]:
+	      # original entry, need to reevaluate
+              nextColor = string.maketrans("wb", "bw")
+              (a,m) = self.negascout(depth - 1, -b, -alpha, newBoardState, string.translate(color, nextColor), stepPerBoard, count, hash) #descend one level and invert the function
+	    else:
+              # already got the evaluation of it, just return the evaluated value
+	      (a,m) = (hashkeysEvalsSteps[ins_pt][1],hashkeysEvalsSteps[ins_pt][2])
+              a = a * -1
 	    if a > alpha:
 	      alpha = a
 	    if alpha >= beta:
@@ -79,27 +92,6 @@ class Evaluation(object):
 		    if alpha >= beta:
 		      return (alpha,n)
             b = alpha + 1
-#	    Common.displayBoard(newBoardState)
-#	    print(val)
-#            if val > alpha:
-#		    alpha = val
-#	    if alpha >= beta:
-#		    return (alpha,m)
-#	    beta = alpha + 1
-#	    if val >= beta:
-#	      return (beta,m)
-#            if val > alpha:
-#	      alpha = val
-
-
-
-#            if (alpha >= beta):
-#	    	return alpha;
-#	    beta = alpha + 1
-#            if (val >= beta):
-#                return (beta,m)
-#            if (val > alpha):
-#                alpha = val
         return (alpha,m)    
 
     #Paul Abbazia

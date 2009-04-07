@@ -69,6 +69,9 @@ class Hash:
   def get_hash_board(self):
 	return self.hash_board
 
+  def get_hashkey(self):
+    return self.hashkey
+
 
   ## 
   # Gives a final seeder value of the initial board. 
@@ -98,6 +101,9 @@ class Hash:
   # back to the original hash
   def initTempHashKey(self):
 	 self.tempHashkey = self.hashkey
+
+  def resetInitialHashKey(self, hashkey):
+	 self.hashkey = hashkey
 
   ##
   # Called when making an actual move. 
