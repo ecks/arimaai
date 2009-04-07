@@ -31,4 +31,3 @@ pieces = {' ' : EMPTY,
           'R' : GOLD+RABBIT,
           'r' : SILVER+RABBIT
               } 
-
