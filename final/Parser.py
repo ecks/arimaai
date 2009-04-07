@@ -37,16 +37,17 @@ class Parser(object):
         del lines[0:1] # get rid of the +----+
         lines.pop()
         lines.pop() # get rid of the bottom rows
- 
+
         # By now, the board should like this:
-        # 8| r r r r |
-        # 7| m h e c |
-        # 6| r x r r x r |
-        # 5| h d c d |
-        # 4| E H M |
-        # 3| R x R R H R |
-        # 2| D C C D |
-        # 1| R R R R |
+        # 8|   r   r r   r   |
+        # 7| m   h     e   c |
+        # 6|   r x r r x r   |
+        # 5| h   d     c   d |
+        # 4| E   H         M |
+        # 3|   R x R R H R   |
+        # 2| D   C     C   D |
+        # 1|   R   R R   R   |
+ 
         
         # We need to grab each char from the board
         # and construct a board state.
@@ -64,4 +65,3 @@ class Parser(object):
             line_col = 3
         
         return (count, color, steps, board)
- 
