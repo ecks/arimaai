@@ -15,8 +15,8 @@ import Hash
 class MoveGenerator(object):
  
  
-    # Currently setting max steps to 2 so we can actually see the results finish.
-    MAX_STEPS = 2
+    # Most amount of steps we can make in a single turn.
+    MAX_STEPS = 4
  
     ##
     # MoveGenerator constructor
