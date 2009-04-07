@@ -8,9 +8,10 @@ Description: Driver class to run our bot.
 import sys
 import os.path
 import Parser
-import MoveGenerator
+import Evaluation
 import Hash 
 import random
+import Common
  
 if __name__ == '__main__':
    
@@ -27,28 +28,20 @@ if __name__ == '__main__':
     if os.path.exists(input) or os.path.isfile(input):
         file = open(input, 'r') # open file for reading
         parser = Parser.Parser(file) # construct new parser object.
-        (turn, color, steps, board) = parser.parse() # Parse the file.
+        (count, color, steps, board) = parser.parse() # Parse the file.
         file.close()
 
-        print "turn is "  + turn
-        print "color is " + color
-         
-        if (turn == "1"):
-            print MoveGenerator.MoveGenerator.randSetup(color)
-        else:
-            hash = Hash.Hash()  # Construct a new hash
-            hash.calculateHashkey(board)  # Calculate the hash key for this given board.
+        hash = Hash.Hash()  # Construct a new hash
+        hash.calculateHashkey(board)  # Calculate the hash key for this given board.
+    
+	eval = Evaluation.Evaluation()
+	print(eval.negascout(1,-999999, 999999, board, color,steps, count, hash))
         
-            # Generate all the possible moves for this board.
-            generator = MoveGenerator.MoveGenerator(turn, color, board, hash)
-
-            generator.genMoves(steps)
-             
-            moves = generator.moveSteps
-            move = moves[random.randint(0, len(moves) - 1)]
-            (board, posMove) = move
-            print posMove
-  
+        # Generate all the possible moves for this board.
+#        generator = MoveGenerator.MoveGenerator(count, color, board, hash)
+#        generator.genMoves(steps)
+     
+     
     else:
         print "File not found"
         
