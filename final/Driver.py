@@ -8,7 +8,7 @@ Description: Driver class to run our bot.
 import sys
 import os.path
 import Parser
-import MoveGenerator
+import Evaluation
 import Hash 
  
 if __name__ == '__main__':
@@ -32,10 +32,13 @@ if __name__ == '__main__':
 
         hash = Hash.Hash()  # Construct a new hash
         hash.calculateHashkey(board)  # Calculate the hash key for this given board.
+    
+	eval = Evaluation.Evaluation()
+	print(eval.negascout(1,-999999, 999999, board, color,steps, count, hash))
         
         # Generate all the possible moves for this board.
-        generator = MoveGenerator.MoveGenerator(count, color, board, hash)
-        generator.genMoves(steps)
+#        generator = MoveGenerator.MoveGenerator(count, color, board, hash)
+#        generator.genMoves(steps)
      
      
 
