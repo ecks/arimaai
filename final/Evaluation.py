@@ -16,11 +16,11 @@ import Step
 
 class Evaluation(object):
 
-    hashkeysEvalsSteps = []
-    evaluations = []
 
     def __init__(self):
-	    pass
+      self.nextColor = string.maketrans("wb", "bw")
+      self.hashkeysEvalsSteps = []
+      self.evaluations = []
 
     ##
     # Negascout algorithm
@@ -34,11 +34,12 @@ class Evaluation(object):
     # @param hash
     # @return 
     def negascout(self, depth, alpha, beta, board, color, steps, count, hash):
+	allsteps = steps
         if (depth == 0):
             eval = self.evaluate(board, color)#returns the strength value of the board 
             self.hashkeysEvalsSteps.append((hash.get_hashkey(),eval,steps)) 
             self.hashkeysEvalsSteps.sort() # warning !!! may not be the best way to do this !!!
-            return (eval,steps)
+            return (eval,allsteps)
         
         b = beta
         m= ""
@@ -99,32 +100,36 @@ class Evaluation(object):
             ins_pt = bisect.bisect_left(currentHashKeys, hashForBoard)
         
             if len(currentHashKeys) == ins_pt or hashForBoard != currentHashKeys[ins_pt]:
-	            # original entry, need to reevaluate
-                nextColor = string.maketrans("wb", "bw")
+	        # original entry, need to reevaluate
             
                 # descend one level and invert the function
-                (a,m) = self.negascout(depth - 1, -b, -alpha, newBoardState, string.translate(color, nextColor), stepPerBoard, count, hash)
+                (a,m) = self.negascout(depth - 1, -b, -alpha, newBoardState, string.translate(color, self.nextColor), stepPerBoard, count, hash)
             else:
                 # already got the evaluation of it, just return the evaluated value
-                (a,m) = (hashkeysEvalsSteps[ins_pt][1],hashkeysEvalsSteps[ins_pt][2])
-                a = a * -1
+                (a,m) = (self.hashkeysEvalsSteps[ins_pt][1],self.hashkeysEvalsSteps[ins_pt][2])
             
-	        if a > alpha:
-	            alpha = a
+	    a = a * -1
+
+            allsteps = m + " | " + allsteps
+            
+	    # alpha-beta pruning
+	    if a > alpha:
+	      alpha = a
           
-	        if alpha >= beta:
-	            return (alpha,m)
+	    if alpha >= beta:
+	      return (alpha,m)
       
-	        if alpha >= b:
-		        (alpha,n) = self.negascout(depth - 1, -beta, -alpha, newBoardState, string.translate(color, nextColor), stepPerBoard, count, hash)
-		        alpha = alpha * -1
+	    if alpha >= b:
+	      (alpha,m) = self.negascout(depth - 1, -beta, -alpha, newBoardState, string.translate(color, self.nextColor), stepPerBoard, count, hash)
+	      alpha = alpha * -1
             
             if alpha >= beta:
-                return (alpha,n)
+	      allsteps = m + " | " + allsteps
+              return (alpha,allsteps)
           
             b = alpha + 1
             
-        return (alpha,m)    
+        return (alpha,allsteps)    
 
     ##
     # Evaluates the given board based on set criteria
