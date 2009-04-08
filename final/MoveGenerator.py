@@ -462,22 +462,12 @@ class MoveGenerator(object):
     # @param b - the second piece
     # @return True if the a is stronger than b, False otherwise
     def __isStronger(self, a, b):
-        a = self.__pieceValue (a)
-        b = self.__pieceValue (b)
+        a = Step.Step.pieceValue (a)
+        b = Step.Step.pieceValue (b)
         return (a > b)
         pass
     
-    ##
-    # Returns the strength value of a given piece.
-    # @param piece - the piece
-    # @param strength - the piece's strength
-    def __pieceValue(self, piece):
-        piece = piece.lower() # Make the piece lowercase.
-        
-        # Make the translation table for strengths
-        transTable = string.maketrans("emhdcrxX", "65432100")
-        strength = string.translate(piece, transTable) # Translate the piece
-        return strength
+
     
     ##
     # Constructs a step in proper notation

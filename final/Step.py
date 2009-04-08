@@ -83,6 +83,19 @@ class Step(object):
             color = "b"
         
         return color
+    
+    ##
+    # Returns the strength value of a given piece.
+    # @param piece - the piece
+    # @param strength - the piece's strength
+    @staticmethod
+    def pieceValue(piece):
+        piece = piece.lower() # Make the piece lowercase.
+        
+        # Make the translation table for strengths
+        transTable = string.maketrans("emhdcrxX", "65432100")
+        strength = string.translate(piece, transTable) # Translate the piece
+        return int(strength)
    
     ##
     # A string representation of this step. 
