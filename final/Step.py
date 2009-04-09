@@ -7,6 +7,7 @@ Steps come in the form of Ra2n, Dd2n, Rc3x, etc.
 '''
 
 import string
+import Piece
 
 class Step(object):
 
@@ -34,7 +35,7 @@ class Step(object):
         self.dir = step[3:4]                  # n
         
         # Get the correct color.
-        self.color = Step.pieceColor(self.piece)
+        self.color = Piece.Piece.pieceColor(self.piece)
         
         # Make the translation table for columns
         transTable = string.maketrans("abcdefgh", "12345678")
@@ -66,36 +67,6 @@ class Step(object):
         
         self.type = Step.REGULAR
         
-    
-    ##
-    # Piece info returns the piece and it's color (white or black)
-    # based on whether it's upper case or lower case.
-    # If it's a blank space, color is returned as nothing.
-    # @param piece - the piece
-    # @return color - the piece's color 
-    @staticmethod           
-    def pieceColor(piece):
-        if piece == " ":
-            color = " "
-        elif piece.isupper():
-            color = "w"
-        else:
-            color = "b"
-        
-        return color
-    
-    ##
-    # Returns the strength value of a given piece.
-    # @param piece - the piece
-    # @param strength - the piece's strength
-    @staticmethod
-    def pieceValue(piece):
-        piece = piece.lower() # Make the piece lowercase.
-        
-        # Make the translation table for strengths
-        transTable = string.maketrans("emhdcrxX", "65432100")
-        strength = string.translate(piece, transTable) # Translate the piece
-        return int(strength)
    
     ##
     # A string representation of this step. 

@@ -12,6 +12,7 @@ import Evaluation
 import Hash 
 import random
 import Common
+import MoveGenerator
  
 if __name__ == '__main__':
    
@@ -28,13 +29,14 @@ if __name__ == '__main__':
     if os.path.exists(input) or os.path.isfile(input):
         file = open(input, 'r') # open file for reading
         parser = Parser.Parser(file) # construct new parser object.
-        (count, color, steps, board) = parser.parse() # Parse the file.
+        (turn, color, steps, board) = parser.parse() # Parse the file.
         file.close()
 
+        hash = Hash.Hash()  # Construct a new hash
+        hash.calculateHashkey(board)  # Calculate the hash key for this given board.
     
-        eval = Evaluation.Evaluation()
-        temp = eval.strongestPosition(board, color)
-        print temp
+        mv = MoveGenerator.MoveGenerator(turn, color, board, hash)
+        mv.genMoves("")
 
      
     else:

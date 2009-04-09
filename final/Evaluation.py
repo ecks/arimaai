@@ -12,7 +12,7 @@ import math
 import copy
 import string
 import bisect
-import Step
+import Piece
 
 class Evaluation(object):
 
@@ -144,34 +144,66 @@ class Evaluation(object):
     # @param board - the board state to evaluate
     # @return the value of this board state
     def evaluate(self, board, color):
+        
         value = 0
-        if color == 'w':
-            for col in range(0,8):
-                for row in range(0,8):
-                    piece = board[row][col]
-                    if piece.isupper():
-                        value += Step.Step.pieceValue(piece)**2
-                        if piece != 'R':
-                            value += Step.Step.pieceValue(piece) * (row+1)
-                        elif piece == 'R':
-                            value += Step.Step.pieceValue(piece) * (row+1)**2
+        
 
-                    if piece.islower():
-                        value -= Step.Step.pieceValue(piece)**2
-        elif color == 'b':
-            for col in range(0,8):
-                for row in range(0,8):
-                    piece = board[row][col]
-                    if piece.islower():
-                        value += Step.Step.pieceValue(piece)**2
-                        if piece != 'r':
-                            value += Step.Step.pieceValue(piece) * (row+1)
-                        elif piece == 'r':
-                            value += Step.Step.pieceValue(piece) * (row+1)**2
-
-                    if piece.isupper():
-                        value -= Step.Step.pieceValue(piece)**2
+        for row in range(0, 8):
+            for col in range (0, 8):
+                piece = board[row][col]
+                    
+                    
+                # Add the rabbits value to the current value.
+                # If it's my own rabbit, then I add rabbit value ^ 2
+                # to the current value. If it's my opponent's rabbit,
+                # then I subtract the opponent's rabbit value from
+                # the current value.
+                if (piece == "R" or piece == "r"):
+                    if self.myPiece(piece, color):
+                        value = value + self.getRabbitValue(row, color)
+                    else:
+                        value = value - self.getRabbitValue(row, color)
+                else:
+                    
+                    # else, just add the piece value to value.
+                    if self.myPiece(piece, color):                    
+                        value = value + Piece.Piece.pieceValue(piece) * 2
+                    else:
+                        value = value + Piece.Piece.pieceValue(piece) * 2
+                    
+                    
+        
         return value
+    
+    def myPiece(self, piece, color):
+        if piece.isupper and (color == "w" or color == "g"):
+            return True
+        elif piece.islower and (color == "b" or color == "s"):
+            return True
+        else:
+            return False
+    
+    ##
+    # Gets the value of the rabbit determined
+    # by how far it is across the board.
+    # The smallest value a rabbit can have in this
+    # evaluation is 2.
+    # For example, if the user has a black rabbit at row 0,
+    # the rabbit's value is 2 ^ (row + 1) = 2
+    # But if black's rabbit is at row 6 (one move from getting in the goal),
+    # then it's value is 2 ^ (row + 1) = 128.
+    # So as the rabbit progresses further down the board,
+    # it's value gets exponentially bigger.
+    def getRabbitValue(self, row, color):
+        
+        rabbitValue = Piece.Piece.pieceValue("r") * 2
+        
+        if color == "w" or color == "g":
+            rabbitValue = rabbitValue ** (len(board) - row)
+        elif color == "b" or color == "s":
+            rabbitValue = rabbitValue ** (row + 1)
+            
+        return rabbitValue
             
 
     ##
@@ -192,8 +224,7 @@ class Evaluation(object):
                 if total > highestValue:
                     best_pos = [row, col]
                     highestValue = total
-                
-        
+  
         return best_pos
 
 
@@ -217,11 +248,11 @@ class Evaluation(object):
                 
                     piece = board[row][col]
                     
-                    if color == "w":
+                    if color == "w" or color == "g":
                         if piece.isupper():
-                            total = total + Step.Step.pieceValue(piece)
-                    elif color == "b":
+                            total = total + Piece.Piece.pieceValue(piece)
+                    elif color == "b" or color == "s":
                         if piece.islower():
-                            total = total + Step.Step.pieceValue(piece)
+                            total = total + Piece.Piece.pieceValue(piece)
                             
         return total
