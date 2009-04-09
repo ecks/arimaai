@@ -129,7 +129,6 @@ class Evaluation(object):
 	      alpha = alpha * -1
             
             if alpha >= beta:
-                allsteps = m + " | " + allsteps
                 return (alpha,steps + " | " + m)
           
             b = alpha + 1
@@ -146,13 +145,13 @@ class Evaluation(object):
     # @param board - the current board state
     # @param color - the person whose turn it is.
     # @return the value of this board state
-    def evaluateBoard(self, board, color):
+    def evaluateBoard(self, board, color, start_row = 0, start_col = 0, end_row = 7, end_col = 7):
         
         value = 0
         
 
-        for row in range(0, 8):
-            for col in range (0, 8):
+        for row in range(start_row, end_row + 1):
+            for col in range (start_col, end_row + 1):
                 piece = board[row][col]
                     
                 
@@ -180,7 +179,7 @@ class Evaluation(object):
                         else:
                             value = value - self.__getRabbitValue(board, row, color)
                     elif (piece == "E" or piece == "e"):
-                        pass
+                        value = value + self.__getElephantValue(board, row, col)
                     else:
                         
                         # else, just add the piece value to value.
@@ -232,7 +231,9 @@ class Evaluation(object):
     # @param col - the column of this elephant
     def __getElephantValue(self, board, row, col):
         
-        return Piece.pieceValue("e")
+        elephantValue = Piece.pieceValue("e")
+        
+        return elephantValue
         
     
     
@@ -298,39 +299,9 @@ class Evaluation(object):
         
         for row in range(0, len(board) - Evaluation.GRID_WIDTH):
             for col in range (0, len(board) - Evaluation.GRID_HEIGHT):
-                total = self.calculateGridValue(row, col, board, color)
+                total = self.evaluateBoard(board, color, row, col, row + Evaluation.GRID_WIDTH, col + Evaluation.GRID_HEIGHT)
                 if total > highestValue:
                     best_pos = [row, col]
                     highestValue = total
   
         return best_pos
-
-
-    ##
-    # Computes the value of the grid given a position.
-    # This is taken from a receiving a position and
-    # adding up the strength values of the pieces around it.
-    # @param row_pos - the row position.
-    # @param col_pos - the column position
-    # @param board - the board state currently
-    # @param color - whose turn it is.
-    # @return the value of the grid
-    def calculateGridValue(self, row_pos, col_pos, board, color):
-        
-        total = 0
-        
-        for row in range (row_pos, row_pos + Evaluation.GRID_WIDTH):
-            for col in range (col_pos, col_pos + Evaluation.GRID_HEIGHT):
-                
-                if row < len(board) and col < len(board):
-                
-                    piece = board[row][col]
-                    
-                    if color == "w" or color == "g":
-                        if piece.isupper():
-                            total = total + Piece.pieceValue(piece)
-                    elif color == "b" or color == "s":
-                        if piece.islower():
-                            total = total + Piece.pieceValue(piece)
-                            
-        return total
