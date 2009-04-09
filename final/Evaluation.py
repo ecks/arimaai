@@ -242,8 +242,8 @@ class Evaluation(object):
     def __getPositionValue(self, color, piece, row, col):
         
         if color == "b":
-            row = 8 - row
-            col = 8 - col
+            row = 7 - row
+            col = 7 - col
         
         value = 0
         
