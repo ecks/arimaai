@@ -121,7 +121,7 @@ class Evaluation(object):
 	      alpha = a
           
 	    if alpha >= beta:
-	      return (alpha,m)
+	      return (alpha,steps + " | " + m)
       
 	    if alpha >= b:
 	      (alpha,m) = self.negascout(depth - 1, -beta, -alpha, newBoardState, string.translate(color, self.nextColor), stepPerBoard, count, hash)
@@ -214,7 +214,7 @@ class Evaluation(object):
         rabbitValue = Piece.pieceValue("r") * 2
         
         if color == "w":
-            rabbitValue = rabbitValue ** (len(self.board) - row)
+            rabbitValue = rabbitValue ** (len(board) - row)
         elif color == "b":
             rabbitValue = rabbitValue ** (row + 1)
             
