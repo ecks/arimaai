@@ -161,8 +161,6 @@ class Evaluation(object):
                 if Board.isFrozen(board, piece, row, col):
                     if Piece.myPiece(piece, color):
                         value = value - Piece.pieceValue(piece) * 2
-                    else:
-                        value = value + Piece.pieceValue(piece) ** 2
                 
                 else:
                     
@@ -228,6 +226,9 @@ class Evaluation(object):
     # Gets the value of the elephant.
     # Since nothing is stronger than the elephant,
     # it's position is vital.
+    # @param board - the current board state
+    # @param row - the row of this elephant
+    # @param col - the column of this elephant
     def __getElephantValue(self, board, row, col):
         
         return Piece.pieceValue("e")
