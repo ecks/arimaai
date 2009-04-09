@@ -4,7 +4,7 @@ Description: Methods that pertain to board functions.
 It's better to have these as static methods so they can be used
 without instantiating an unnecessary object.
 
-@author: eric
+@author: et
 '''
 
 import re
@@ -25,7 +25,7 @@ def isFrozen(board, piece, row, col):
     for pos in occ_adj_pos:
         adj_row = pos[0]
         adj_col = pos[1]
-        adj_piece = self.board[adj_row][adj_col]
+        adj_piece = board[adj_row][adj_col]
         
         if adj_piece == " ":
             continue
@@ -33,7 +33,7 @@ def isFrozen(board, piece, row, col):
             continue
         elif adj_piece.islower() and piece.islower():
             continue
-        elif self.__isStronger(adj_piece, piece):
+        elif Piece.isStronger(adj_piece, piece):
             return True
     
     return False
@@ -89,7 +89,7 @@ def isSafe(board, row, col):
     for pos in adj_occ_pos:
         adj_row = pos[0]
         adj_col = pos[1]
-        adj_piece = self.board[adj_row][adj_col]
+        adj_piece = board[adj_row][adj_col]
         piece = board[adj_row][adj_col]
         if Piece.areFriends(adj_piece, piece):
             return True

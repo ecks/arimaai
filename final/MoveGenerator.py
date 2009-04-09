@@ -217,22 +217,21 @@ class MoveGenerator(object):
         # Multiple pieces could move into that position, just as long as their
         # stronger and aren't on the same team.
         if next_move_type == Step.Step.MUST_PUSH:
-            occ_adj_pos = Board.Board.getAdjacentPositions(board, last_step.start_row, last_step.start_col, True)
+            occ_adj_pos = Board.getAdjacentPositions(self.board, last_step.start_row, last_step.start_col, True)
             for pos in occ_adj_pos:
                 row = pos[0]
                 col = pos[1]
                 piece = self.board[row][col]
-                color = Piece.Piece.pieceColor(piece)
+                color = Piece.pieceColor(piece)
                 if piece == " " or piece == "x" or piece == "X":
                     continue
                 # A piece can't move into it's friendly space.
                 elif color != last_step.color:
                     # See if this piece is stronger than the one that was just moved
-                    if Piece.Piece.isStronger(piece, last_step.piece):
+                    if Piece.isStronger(piece, last_step.piece):
                         
                         # Can this piece even move? Or is it frozen.
-                        piece_occ_adj_pos = Board.Board.getAdjacentPositions(board, row, col, True)
-                        if not Board.Board.isFrozen(board, piece, piece_occ_adj_pos):
+                        if not Board.isFrozen(self.board, piece, row, col):
                             step = self.__makeStep(piece, row, col, [[last_step.start_row, last_step.start_col]])
                             moves.append(step)
                             
@@ -290,7 +289,7 @@ class MoveGenerator(object):
                                 adj_color = Piece.pieceColor(adj_piece)
                                 if adj_color == self.color and \
                                     Piece.isStronger(adj_piece, piece):
-                                    if not Board.isFrozen(self.board, row, col, adj_piece):
+                                    if not Board.isFrozen(self.board, adj_piece, row, col):
                                         step = self.__makeStep(piece, row, col, unocc_adj_pos)
                                         moves.append(step)
                                 

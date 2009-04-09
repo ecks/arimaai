@@ -4,9 +4,10 @@ Description: Methods that pertain to piece functions.
 It's better to have these as static methods so they can be used
 without instantiating an unnecessary object.
 
-@author: eric
+@author: et
 '''
 
+import string
 
 ##
 # Piece info returns the piece and it's color (white or black)
