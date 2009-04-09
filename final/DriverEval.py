@@ -32,11 +32,8 @@ if __name__ == '__main__':
         (turn, color, steps, board) = parser.parse() # Parse the file.
         file.close()
 
-        hash = Hash.Hash()  # Construct a new hash
-        hash.calculateHashkey(board)  # Calculate the hash key for this given board.
-    
-        mv = MoveGenerator.MoveGenerator(turn, color, board, hash)
-        mv.genMoves("")
+        eval = Evaluation.Evaluation(board)
+        print eval.evaluateBoard(color)
 
      
     else:

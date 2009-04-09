@@ -64,7 +64,7 @@ def areFriends(pieceA, pieceB):
 # @param piece - the piece
 # @param color - my color
 # @return True if this is my piece, False otherwise.
-def myPiece(self, piece, color):
+def myPiece(piece, color):
     if piece.isupper and (color == "w" or color == "g"):
         return True
     elif piece.islower and (color == "b" or color == "s"):

@@ -21,10 +21,11 @@ class Evaluation(object):
     GRID_WIDTH = 3
     GRID_HEIGHT = 3
 
-    def __init__(self):
-      self.nextColor = string.maketrans("wb", "bw")
-      self.hashkeysEvalsSteps = []
-      self.evaluations = []
+    def __init__(self, board):
+        self.board = board
+        self.nextColor = string.maketrans("wb", "bw")
+        self.hashkeysEvalsSteps = []
+        self.evaluations = []
 
     ##
     # Negascout algorithm
@@ -142,39 +143,46 @@ class Evaluation(object):
     #         board for all pieces except rabbits
     #       - Player gains pieceValue * distance ^ 2 for rabbits
     #       - Player 'gains' sum of square of own pieces - sum of square enemy pieces
-    # @param board - the board state to evaluate
+    # @param color - the person whose turn it is.
     # @return the value of this board state
-    def evaluate(self, board, color):
+    def evaluateBoard(self, color):
         
         value = 0
         
 
         for row in range(0, 8):
             for col in range (0, 8):
-                piece = board[row][col]
+                piece = self.board[row][col]
                     
                 
-                if Board.Board.isFrozen(board, piece, row, col) and \
-                    Piece.myPiece(piece, color):
-                    value = value
-                
-                # Add the rabbits value to the current value.
-                # If it's my own rabbit, then I add rabbit value ^ 2
-                # to the current value. If it's my opponent's rabbit,
-                # then I subtract the opponent's rabbit value from
-                # the current value.
-                if (piece == "R" or piece == "r"):
-                    if self.myPiece(piece, color):
-                        value = value + self.getRabbitValue(row, color)
+                # If this piece is frozen and it's my piece,
+                # then subtract 2 * the value of the piece
+                # otherwise, add the piece's value squared.
+                if Board.isFrozen(self.board, piece, row, col):
+                    if Piece.myPiece(piece, color):
+                        value = value - Piece.pieceValue(piece) * 2
                     else:
-                        value = value - self.getRabbitValue(row, color)
+                        value = value + Piece.pieceValue(piece) ** 2
+                
                 else:
-                    
-                    # else, just add the piece value to value.
-                    if Piece.Piece.myPiece(piece, color):                    
-                        value = value + Piece.Piece.pieceValue(piece) * 2
+                
+                    # Add the rabbits value to the current value.
+                    # If it's my own rabbit, then I add rabbit value ^ 2
+                    # to the current value. If it's my opponent's rabbit,
+                    # then I subtract the opponent's rabbit value from
+                    # the current value.
+                    if (piece == "R" or piece == "r"):
+                        if Piece.myPiece(piece, color):
+                            value = value + self.getRabbitValue(row, color)
+                        else:
+                            value = value - self.getRabbitValue(row, color)
                     else:
-                        value = value + Piece.Piece.pieceValue(piece) * 2
+                        
+                        # else, just add the piece value to value.
+                        if Piece.myPiece(piece, color):                    
+                            value = value + Piece.pieceValue(piece) * 2
+                        else:
+                            value = value + Piece.pieceValue(piece) * 2
                     
                     
         
@@ -195,10 +203,10 @@ class Evaluation(object):
     # it's value gets exponentially bigger.
     def getRabbitValue(self, row, color):
         
-        rabbitValue = Piece.Piece.pieceValue("r") * 2
+        rabbitValue = Piece.pieceValue("r") * 2
         
         if color == "w" or color == "g":
-            rabbitValue = rabbitValue ** (len(board) - row)
+            rabbitValue = rabbitValue ** (len(self.board) - row)
         elif color == "b" or color == "s":
             rabbitValue = rabbitValue ** (row + 1)
             
