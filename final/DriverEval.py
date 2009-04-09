@@ -32,8 +32,8 @@ if __name__ == '__main__':
         (turn, color, steps, board) = parser.parse() # Parse the file.
         file.close()
 
-        eval = Evaluation.Evaluation(board)
-        print eval.evaluateBoard(color)
+        eval = Evaluation.Evaluation()
+        print eval.evaluateBoard(board, color)
 
      
     else:

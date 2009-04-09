@@ -21,8 +21,7 @@ class Evaluation(object):
     GRID_WIDTH = 3
     GRID_HEIGHT = 3
 
-    def __init__(self, board):
-        self.board = board
+    def __init__(self):
         self.nextColor = string.maketrans("wb", "bw")
         self.hashkeysEvalsSteps = []
         self.evaluations = []
@@ -143,29 +142,34 @@ class Evaluation(object):
     #         board for all pieces except rabbits
     #       - Player gains pieceValue * distance ^ 2 for rabbits
     #       - Player 'gains' sum of square of own pieces - sum of square enemy pieces
+    # @param board - the current board state
     # @param color - the person whose turn it is.
     # @return the value of this board state
-    def evaluateBoard(self, color):
+    def evaluateBoard(self, board, color):
         
         value = 0
         
 
         for row in range(0, 8):
             for col in range (0, 8):
-                piece = self.board[row][col]
+                piece = board[row][col]
                     
                 
                 # If this piece is frozen and it's my piece,
                 # then subtract 2 * the value of the piece
                 # otherwise, add the piece's value squared.
-                if Board.isFrozen(self.board, piece, row, col):
+                if Board.isFrozen(board, piece, row, col):
                     if Piece.myPiece(piece, color):
                         value = value - Piece.pieceValue(piece) * 2
                     else:
                         value = value + Piece.pieceValue(piece) ** 2
                 
                 else:
-                
+                    
+                    # If it has a piece frozen, that should add some points
+                    # to its value.
+                    value = self.__hasPieceFrozen(board, row, col, piece)        
+                            
                     # Add the rabbits value to the current value.
                     # If it's my own rabbit, then I add rabbit value ^ 2
                     # to the current value. If it's my opponent's rabbit,
@@ -173,9 +177,11 @@ class Evaluation(object):
                     # the current value.
                     if (piece == "R" or piece == "r"):
                         if Piece.myPiece(piece, color):
-                            value = value + self.getRabbitValue(row, color)
+                            value = value + self.__getRabbitValue(board, row, color)
                         else:
-                            value = value - self.getRabbitValue(row, color)
+                            value = value - self.__getRabbitValue(board, row, color)
+                    elif (piece == "E" or piece == "e"):
+                        pass
                     else:
                         
                         # else, just add the piece value to value.
@@ -201,16 +207,79 @@ class Evaluation(object):
     # then it's value is 2 ^ (row + 1) = 128.
     # So as the rabbit progresses further down the board,
     # it's value gets exponentially bigger.
-    def getRabbitValue(self, row, color):
+    # @param board - the current board state
+    # @param row - the row number the rabbit is in.
+    # @param col - the column number the rabbit is in.
+    # @param color - the person whose turn it is.
+    def __getRabbitValue(self, board, row, color):
         
         rabbitValue = Piece.pieceValue("r") * 2
         
-        if color == "w" or color == "g":
+        if color == "w":
             rabbitValue = rabbitValue ** (len(self.board) - row)
-        elif color == "b" or color == "s":
+        elif color == "b":
             rabbitValue = rabbitValue ** (row + 1)
             
         return rabbitValue
+    
+    
+    
+    ##
+    # Gets the value of the elephant.
+    # Since nothing is stronger than the elephant,
+    # it's position is vital.
+    def __getElephantValue(self, board, row, col):
+        
+        return Piece.pieceValue("e")
+        
+    
+    
+    ##
+    # If this piece has another piece frozen,
+    # then for each piece frozen, the return value
+    # gets exponentially bigger. The standard value
+    # for each piece frozen is 10. So if this
+    # piece has 1 piece frozen, then it's 10.
+    # If it has 2 pieces frozen, then it returns 10.
+    # However if it has 4 pieces frozen, then that
+    # means it's trapped (NOT GOOD!!!!). That returns
+    # -1000.
+    # @param board - the current board state
+    # @param row - the piece's row position
+    # @param col - the piece's column position
+    # @param piece - the piece
+    # @param value - the value of this piece.
+    def __hasPieceFrozen(self, board, row, col, piece):
+                
+        value = 0
+        piecesFrozen = 0
+        
+        # Generate all the occupied adjacent positions.
+        adj_occ_pos = Board.getAdjacentPositions(board, row, col, True)
+        for pos in adj_occ_pos:
+            adj_row = pos[0]
+            adj_col = pos[1]
+            adj_piece = board[adj_row][adj_col]
+            
+            # Make sure you're not looking at piece that
+            # you're friends with.
+            if not Piece.areFriends(piece, adj_piece):
+                
+                # If you're stronger than the adjacent piece,
+                # then you've frozen it.
+                if Piece.isStronger(piece, adj_piece):
+                    piecesFrozen
+
+        if piecesFrozen > 0:
+            value = 10 ** piecesFrozen
+        
+        if piecesFrozen == 4:
+            value = -1000
+            
+        return value
+        
+    
+    
             
 
     ##
