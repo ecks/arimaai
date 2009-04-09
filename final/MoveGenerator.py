@@ -135,16 +135,16 @@ class MoveGenerator(object):
             trapped_piece = ""
             # Is the piece in a trap square?
             if step.end_row == 2 and step.end_col == 2:
-                if not Board.Board.isSafe(self.board, step.end_row, step.end_col):
+                if not Board.isSafe(self.board, step.end_row, step.end_col):
                     trapped_piece = piece + "c6x"
             elif step.end_row == 2 and step.end_col == 5:
-                if not Board.Board.isSafe(self.board, step.end_row, step.end_col):
+                if not Board.isSafe(self.board, step.end_row, step.end_col):
                     trapped_piece = piece + "f6x"
             elif step.end_row == 5 and step.end_col == 2:
-                if not Board.Board.isSafe(self.board, step.end_row, step.end_col):
+                if not Board.isSafe(self.board, step.end_row, step.end_col):
                     trapped_piece = piece + "c3x"
             elif step.end_row == 5 and step.end_col == 5:
-                if not Board.Board.isSafe(self.board, step.end_row, step.end_col):
+                if not Board.isSafe(self.board, step.end_row, step.end_col):
                     trapped_piece = piece + "f3x"
             else:
                 # Put this piece in its new place
@@ -246,17 +246,17 @@ class MoveGenerator(object):
                     if piece == " " or re.match("x", piece, re.IGNORECASE):
                         continue
                                     
-                    piece_color = Piece.Piece.pieceColor(piece)
+                    piece_color = Piece.pieceColor(piece)
                     
                     # Get all the unoccupied and occupied adjacent positions to this piece
-                    unocc_adj_pos = Board.Board.getAdjacentPositions(self.board, row, col, False)
-                    occ_adj_pos = Board.Board.getAdjacentPositions(self.board, row, col, True)
+                    unocc_adj_pos = Board.getAdjacentPositions(self.board, row, col, False)
+                    occ_adj_pos = Board.getAdjacentPositions(self.board, row, col, True)
                     
                     # Only generate moves for the current player
                     if piece_color == self.color:
     
                         # Is the piece NOT frozen
-                        if not Board.Board.isFrozen(self.board, piece, row, col):
+                        if not Board.isFrozen(self.board, piece, row, col):
                             unocc_adj_pos = self.__adjustRabbitPositions(piece, unocc_adj_pos)
                             step = self.__makeStep(piece, row, col, unocc_adj_pos)
                             moves.append(step)
@@ -269,10 +269,10 @@ class MoveGenerator(object):
                         if (next_move_type == Step.Step.CAN_PULL):
                             
                             # Get all the occupied positions to the last step.
-                            prev_adj_occ_pos = Board.Board.getAdjacentPositions(self.board, last_step.start_row, last_step.start_col, True)
+                            prev_adj_occ_pos = Board.getAdjacentPositions(self.board, last_step.start_row, last_step.start_col, True)
                             for prev_adj_pos in prev_adj_occ_pos:
                                 if piece_color != self.color and \
-                                   Piece.Piece.isStronger(last_step.piece, piece):
+                                   Piece.isStronger(last_step.piece, piece):
                                         prev_adj_row = prev_adj_pos[0]
                                         prev_adj_col = prev_adj_pos[1]
                                         if row == prev_adj_row and col == prev_adj_col:
@@ -287,10 +287,10 @@ class MoveGenerator(object):
                                 adj_row = pos[0]
                                 adj_col = pos[1]
                                 adj_piece = self.board[adj_row][adj_col]
-                                adj_color = Piece.Piece.pieceColor(adj_piece)
+                                adj_color = Piece.pieceColor(adj_piece)
                                 if adj_color == self.color and \
-                                    Piece.Piece.isStronger(adj_piece, piece):
-                                    if not Board.Board.isFrozen(self.board, row, col, adj_piece):
+                                    Piece.isStronger(adj_piece, piece):
+                                    if not Board.isFrozen(self.board, row, col, adj_piece):
                                         step = self.__makeStep(piece, row, col, unocc_adj_pos)
                                         moves.append(step)
                                 
@@ -347,15 +347,15 @@ class MoveGenerator(object):
                 return Step.Step.MUST_PUSH
         else:
             # Get all the occupied adjacent positions to see if we can attempt a pull.
-            adj_pos = Board.Board.getAdjacentPositions(self.board, last_step.start_row, last_step.start_col, True)
+            adj_pos = Board.getAdjacentPositions(self.board, last_step.start_row, last_step.start_col, True)
             for pos in adj_pos:
                 row = pos[0]
                 col = pos[1]
                 other_piece = self.board[row][col]
                 # Ensure that the piece we are trying to pull is not our own.
-                if Piece.Piece.pieceColor(other_piece) != self.color:
+                if Piece.pieceColor(other_piece) != self.color:
                     # Now are we actually stronger than that piece
-                    if Piece.Piece.isStronger(last_step.piece, other_piece):
+                    if Piece.isStronger(last_step.piece, other_piece):
                         return Step.Step.CAN_PULL
         
         return Step.Step.REGULAR

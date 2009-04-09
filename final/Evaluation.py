@@ -13,6 +13,7 @@ import copy
 import string
 import bisect
 import Piece
+import Board
 
 class Evaluation(object):
 
@@ -152,7 +153,11 @@ class Evaluation(object):
             for col in range (0, 8):
                 piece = board[row][col]
                     
-                    
+                
+                if Board.Board.isFrozen(board, piece, row, col) and \
+                    Piece.myPiece(piece, color):
+                    value = value
+                
                 # Add the rabbits value to the current value.
                 # If it's my own rabbit, then I add rabbit value ^ 2
                 # to the current value. If it's my opponent's rabbit,
@@ -166,7 +171,7 @@ class Evaluation(object):
                 else:
                     
                     # else, just add the piece value to value.
-                    if self.myPiece(piece, color):                    
+                    if Piece.Piece.myPiece(piece, color):                    
                         value = value + Piece.Piece.pieceValue(piece) * 2
                     else:
                         value = value + Piece.Piece.pieceValue(piece) * 2
@@ -175,13 +180,7 @@ class Evaluation(object):
         
         return value
     
-    def myPiece(self, piece, color):
-        if piece.isupper and (color == "w" or color == "g"):
-            return True
-        elif piece.islower and (color == "b" or color == "s"):
-            return True
-        else:
-            return False
+
     
     ##
     # Gets the value of the rabbit determined

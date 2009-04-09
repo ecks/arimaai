@@ -35,7 +35,7 @@ class Step(object):
         self.dir = step[3:4]                  # n
         
         # Get the correct color.
-        self.color = Piece.Piece.pieceColor(self.piece)
+        self.color = Piece.pieceColor(self.piece)
         
         # Make the translation table for columns
         transTable = string.maketrans("abcdefgh", "12345678")
