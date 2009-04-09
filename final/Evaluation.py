@@ -38,12 +38,13 @@ class Evaluation(object):
     # @param hash
     # @return 
     def negascout(self, depth, alpha, beta, board, color, steps, count, hash):
-	allsteps = steps
+	    
+        allsteps = steps
         if (depth == 0):
             eval = self.evaluateBoard(board, color)#returns the strength value of the board 
             self.hashkeysEvalsSteps.append((hash.get_hashkey(),eval,steps)) 
             self.hashkeysEvalsSteps.sort() # warning !!! may not be the best way to do this !!!
-            return (eval,allsteps)
+            return (eval, allsteps)
         
         b = beta
         m= ""
@@ -112,7 +113,7 @@ class Evaluation(object):
                 # already got the evaluation of it, just return the evaluated value
                 (a,m) = (self.hashkeysEvalsSteps[ins_pt][1],self.hashkeysEvalsSteps[ins_pt][2])
             
-	    a = a * -1
+	        a = a * -1
 
             allsteps = m + " | " + allsteps
             
@@ -128,8 +129,8 @@ class Evaluation(object):
 	      alpha = alpha * -1
             
             if alpha >= beta:
-	      allsteps = m + " | " + allsteps
-              return (alpha,steps + " | " + m)
+                allsteps = m + " | " + allsteps
+                return (alpha,steps + " | " + m)
           
             b = alpha + 1
             
@@ -166,7 +167,7 @@ class Evaluation(object):
                     
                     # If it has a piece frozen, that should add some points
                     # to its value.
-                    value = self.__hasPiecesFrozen(board, row, col, piece)        
+                    value = value + self.__hasPiecesFrozen(board, row, col, piece)        
                             
                     # Add the rabbits value to the current value.
                     # If it's my own rabbit, then I add rabbit value ^ 2
@@ -214,7 +215,7 @@ class Evaluation(object):
         rabbitValue = Piece.pieceValue("r") * 2
         
         if color == "w":
-            rabbitValue = rabbitValue ** (len(self.board) - row)
+            rabbitValue = rabbitValue ** (len(board) - row)
         elif color == "b":
             rabbitValue = rabbitValue ** (row + 1)
             
