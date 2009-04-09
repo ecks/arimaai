@@ -36,7 +36,7 @@ if __name__ == '__main__':
         hash.calculateHashkey(board)  # Calculate the hash key for this given board.
     
 	eval = Evaluation.Evaluation()
-	unfilteredAnswer = eval.negascout(4,(-999999,""), (999999,""), board, string.translate(color, Common.nextColor), steps, count, hash)
+	unfilteredAnswer = eval.negascout(4,(-999999,""), (999999,""), board, color, steps, count, hash)
 	unfilteredMoves = unfilteredAnswer[1].split('|')
 	filteredAnswer = (unfilteredAnswer[0], unfilteredMoves[1])
 	print "Answer: " + str(filteredAnswer)
