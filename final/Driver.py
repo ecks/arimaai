@@ -35,7 +35,7 @@ if __name__ == '__main__':
         hash.calculateHashkey(board)  # Calculate the hash key for this given board.
     
 	eval = Evaluation.Evaluation()
-	print(eval.negascout(3,-999999, 999999, board, color,steps, count, hash))
+	print(eval.negascout(1,-999999, 999999, board, color,steps, count, hash))
         
         # Generate all the possible moves for this board.
 #        generator = MoveGenerator.MoveGenerator(count, color, board, hash)

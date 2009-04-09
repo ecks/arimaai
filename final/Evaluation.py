@@ -40,7 +40,7 @@ class Evaluation(object):
     def negascout(self, depth, alpha, beta, board, color, steps, count, hash):
 	allsteps = steps
         if (depth == 0):
-            eval = self.evaluate(board, color)#returns the strength value of the board 
+            eval = self.evaluateBoard(board, color)#returns the strength value of the board 
             self.hashkeysEvalsSteps.append((hash.get_hashkey(),eval,steps)) 
             self.hashkeysEvalsSteps.sort() # warning !!! may not be the best way to do this !!!
             return (eval,allsteps)
@@ -49,26 +49,26 @@ class Evaluation(object):
         m= ""
 	    
         turnList = []
-        bestPos = self.boardStrength(board)
+        bestPos = self.strongestPosition(board, color)
         
         # Create a 5 x 5 grid around the best possible position.
-        lowRow = bestPos[0][0]-2
-        lowCol = bestPos[0][1]-2
-        highRow = lowRow + 4
-        highCol = lowCol + 4
+        #lowRow = bestPos[0][0]-2
+        #lowCol = bestPos[0][1]-2
+        #highRow = lowRow + 4
+        #highCol = lowCol + 4
             
         # Ensure that 5x5 grid is within the correct bounds.
-        if lowRow < 0:
-            lowRow = 0
+        #if lowRow < 0:
+        #    lowRow = 0
                 
-        if lowCol < 0:
-            lowCol = 0
+        #if lowCol < 0:
+        #    lowCol = 0
             
-        if highRow > 7:
-            highRow = 7
+        #if highRow > 7:
+        #    highRow = 7
             
-        if highCol > 7:
-            highCol = 7
+        #if highCol > 7:
+        #    highCol = 7
             
         # Construct a new MoveGenerator object for white and its board,
         # then generate all the possible moves.
@@ -81,14 +81,14 @@ class Evaluation(object):
         # to get to that board, and hash key for that board).
         turnList = moveGen.moveStepHashes
 	    
-        if color == 'w': #white's turn
-            print lowRow
-            print lowCol
-            print highRow
-            print highCol
+        #if color == 'w': #white's turn
+        #    print lowRow
+        #    print lowCol
+        #    print highRow
+        #    print highCol
    
-        elif color == 'b': #black's turn
-            pass
+        #elif color == 'b': #black's turn
+        #    pass
 
 
         for turn in turnList:
@@ -129,11 +129,11 @@ class Evaluation(object):
             
             if alpha >= beta:
 	      allsteps = m + " | " + allsteps
-              return (alpha,allsteps)
+              return (alpha,steps + " | " + m)
           
             b = alpha + 1
             
-        return (alpha,allsteps)    
+        return (alpha,steps + " | " + m)    
 
     ##
     # Evaluates the given board based on set criteria
@@ -326,9 +326,9 @@ class Evaluation(object):
                     
                     if color == "w" or color == "g":
                         if piece.isupper():
-                            total = total + Piece.Piece.pieceValue(piece)
+                            total = total + Piece.pieceValue(piece)
                     elif color == "b" or color == "s":
                         if piece.islower():
-                            total = total + Piece.Piece.pieceValue(piece)
+                            total = total + Piece.pieceValue(piece)
                             
         return total
