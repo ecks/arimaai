@@ -17,6 +17,9 @@ import Step
 class Evaluation(object):
 
 
+    GRID_WIDTH = 3
+    GRID_HEIGHT = 3
+
     def __init__(self):
       self.nextColor = string.maketrans("wb", "bw")
       self.hashkeysEvalsSteps = []
@@ -172,68 +175,53 @@ class Evaluation(object):
             
 
     ##
-    # Computes a running average of piece values to narrow search space 
-    # (a 5 x 5 grid is chosen to try to contain pieces that could 
-    # potentially effect the area)
+    # Determines the best 3 x 3 grid to construct a
+    # search space.
     # @param board - the current board state
-    # @return the center of the strongest position for each player
-    def boardStrength(self, board):
-        
-        # Copy the original boards.
-        white = copy.deepcopy(board)
-        black = copy.deepcopy(board)
-        
-        bestWhite = 0
-        bestBlack = 0
-        
-        bestWhitePos = [0,0]
-        bestBlackPos = [0,0]
-        
-        for row in range(0,len(board[0])):
-            for col in range(0,len(board[0])):
-                indices = [] #the indices of the moves concerned
-                for x in range(-2,3): #subscript a 5x5 moving grid
-                    for y in range(-2,3):
-                        newRow = abs(row+x)
-                        
-			newCol = abs(col+y)
-            
-			if newRow > 7:
-				newRow = newRow - 2
-                
-			if newCol > 7:
-				newCol = newCol - 2
-                
-			indices.append([newRow, newCol])#take the absolute value to avoid going negative out of bounds
-            white[row][col] = self.average(indices,25,board,1)
-                
-            if white[row][col] > bestWhite:
-                bestWhite = white[row][col]
-                bestWhitePos = [row,col]
-            
-            black[row][col] = self.average(indices,25,board,-1)
-                
-            if black[row][col] > bestBlack:
-                bestBlack = black[row][col]
-                bestBlackPos = [row,col]
+    # @param color - the person's color.
+    # @return best_pos - the best position to construct a search of.
+    def strongestPosition(self, board, color):
 
-        return [bestWhitePos, bestBlackPos]
+        best_pos = [0,0]
+        highestValue = 0
+        
+        
+        for row in range(0, len(board) - Evaluation.GRID_WIDTH):
+            for col in range (0, len(board) - Evaluation.GRID_HEIGHT):
+                total = self.calculateGridValue(row, col, board, color)
+                if total > highestValue:
+                    best_pos = [row, col]
+                    highestValue = total
+                
+        
+        return best_pos
+
 
     ##
-    # Computes the average value of the given grid on the board
-    # @param indices - the points to average
-    # @param gridSize - the size of the grid being averaged
-    # @param board - the board concerned
-    # @param player - 1 for white, -1 for black
-    # @return the averaged position state
-    def average(self, indices,gridSize, board, player):
+    # Computes the value of the grid given a position.
+    # This is taken from a receiving a position and
+    # adding up the strength values of the pieces around it.
+    # @param row_pos - the row position.
+    # @param col_pos - the column position
+    # @param board - the board state currently
+    # @param color - whose turn it is.
+    # @return the value of the grid
+    def calculateGridValue(self, row_pos, col_pos, board, color):
+        
         total = 0
-        for point in indices:
-            piece  = board[point[0]][point[1]]
-            if player == 1:
-                if piece.isupper(): #white piece
-                    total = total + Step.Step.pieceValue(piece)
-            elif player == -1:
-                if piece.islower(): #black piece
-                    total = total + Step.Step.pieceValue(piece)
-        return total / (gridSize * 1)
+        
+        for row in range (row_pos, row_pos + Evaluation.GRID_WIDTH):
+            for col in range (col_pos, col_pos + Evaluation.GRID_HEIGHT):
+                
+                if row < len(board) and col < len(board):
+                
+                    piece = board[row][col]
+                    
+                    if color == "w":
+                        if piece.isupper():
+                            total = total + Step.Step.pieceValue(piece)
+                    elif color == "b":
+                        if piece.islower():
+                            total = total + Step.Step.pieceValue(piece)
+                            
+        return total
