@@ -19,8 +19,8 @@ class Negascout(object):
     def __init__(self):
         self.hashkeysEvalsSteps = []
         self.evaluations = []
-
-	self.eval = Evaluation.Evaluation()
+        
+        self.eval = Evaluation.Evaluation()
 
         # To-do: Determine best starting grid
 
@@ -66,14 +66,13 @@ class Negascout(object):
             stepPerBoard = turn[1]
             hashForBoard = turn[2]
             
-	    # reset from initial board hash to new board hash
+            # reset from initial board hash to new board hash
             hash.resetInitialHashKey(hashForBoard)
     
             newColor = color
-	    if depth > 1:
-	      # if depth is 1, we need to evaluate the actual board with the same color
-              newColor = string.translate(color, Common.nextColor)
-
+            if depth > 1:
+	          # if depth is 1, we need to evaluate the actual board with the same color
+                  newColor = string.translate(color, Common.nextColor)
             
             currentHashKeys = map(lambda x: x[0], self.hashkeysEvalsSteps)
             
@@ -83,35 +82,36 @@ class Negascout(object):
 	        # original entry, need to reevaluate
             
                 # descend one level and invert the function
-		bTemp = (-1 * b[0],b[1])
-		alphaTemp = (-1 * alpha[0], alpha[1])
+                bTemp = (-1 * b[0],b[1])
+                alphaTemp = (-1 * alpha[0], alpha[1])
                 a = self.negascout(depth - 1, bTemp, alphaTemp, newBoardState, newColor, stepPerBoard, count, hash)
             else:
                 # already got the evaluation of it, just return the evaluated value
                 a = (self.hashkeysEvalsSteps[ins_pt][1],self.hashkeysEvalsSteps[ins_pt][2])
             
-	    a = (a[0] * -1,a[1])
+            a = (a[0] * -1,a[1])
 
-	    print "a: " + str((a,m,b))
+            print "a: " + str((a,m,b))
 	    # alpha-beta pruning
-	    if a[0] > alpha[0]:
-	      print "Change alpha: " + str(alpha[0]) + " a => " + str(a[0])
-	      alpha = a
+            if a[0] > alpha[0]:
+                print "Change alpha: " + str(alpha[0]) + " a => " + str(a[0])
+                alpha = a
           
-	    print "alpha: " + str((alpha,m,b))
+            print "alpha: " + str((alpha,m,b))
 
-	    if alpha[0] >= beta[0]:
-	      return (alpha[0], steps + " | " + alpha[1])
+            if alpha[0] >= beta[0]:
+                return (alpha[0], steps + " | " + alpha[1])
       
-	    if alpha[0] >= b[0]:
-	      betaTemp = (-1 * beta[0],beta[1])
-	      alphaTemp = (-1 * alpha[0],alpha[1])
-	      alpha = self.negascout(depth - 1, betaTemp, alphaTemp, newBoardState, newColor, stepPerBoard, count, hash)
-	      alpha = (alpha[0] * -1,alpha[1])
-	      print "in alpha >= b: alpha ==> " + str(alpha)
-              if alpha[0] >= beta[0]:
-                return (alpha[0],steps + " | " + alpha[1])
-          
-            b = (alpha[0] + 1,alpha[1])
+            if alpha[0] >= b[0]:
+                betaTemp = (-1 * beta[0],beta[1])
+                alphaTemp = (-1 * alpha[0],alpha[1])
+                alpha = self.negascout(depth - 1, betaTemp, alphaTemp, newBoardState, newColor, stepPerBoard, count, hash)
+                alpha = (alpha[0] * -1,alpha[1])
+
+                print "in alpha >= b: alpha ==> " + str(alpha)
+                if alpha[0] >= beta[0]:
+                    return (alpha[0],steps + " | " + alpha[1])
+      
+                b = (alpha[0] + 1,alpha[1])
             
         return (alpha[0],steps + " | " + alpha[1])
