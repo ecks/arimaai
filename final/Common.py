@@ -1,3 +1,8 @@
+import string
+
+nextColor = string.maketrans("wb", "bw")
+
+
 def displayBoard(board):
          print " ",
          for letter in range(97, 105):
