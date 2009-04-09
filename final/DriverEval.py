@@ -33,7 +33,7 @@ if __name__ == '__main__':
         file.close()
 
         eval = Evaluation.Evaluation()
-        print eval.strongestPosition(board, color)
+        print eval.evaluateBoard(board, color)
 
      
     else:

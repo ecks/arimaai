@@ -14,6 +14,8 @@ import string
 import bisect
 import Piece
 import Board
+import re
+import Values
 
 class Evaluation(object):
 
@@ -155,86 +157,101 @@ class Evaluation(object):
                 piece = board[row][col]
                     
                 
-                # If this piece is frozen and it's my piece,
-                # then subtract 2 * the value of the piece
-                # otherwise, add the piece's value squared.
-                if Board.isFrozen(board, piece, row, col):
-                    if Piece.myPiece(piece, color):
-                        value = value - Piece.pieceValue(piece) * 2
-                
-                else:
-                    
-                    # If it has a piece frozen, that should add some points
-                    # to its value.
-                    value = value + self.__hasPiecesFrozen(board, row, col, piece)        
-                            
-                    # Add the rabbits value to the current value.
-                    # If it's my own rabbit, then I add rabbit value ^ 2
-                    # to the current value. If it's my opponent's rabbit,
-                    # then I subtract the opponent's rabbit value from
-                    # the current value.
-                    if (piece == "R" or piece == "r"):
-                        if Piece.myPiece(piece, color):
-                            value = value + self.__getRabbitValue(board, row, color)
-                        else:
-                            value = value - self.__getRabbitValue(board, row, color)
-                    elif (piece == "E" or piece == "e"):
-                        value = value + self.__getElephantValue(board, row, col)
-                    else:
-                        
-                        # else, just add the piece value to value.
-                        if Piece.myPiece(piece, color):                    
-                            value = value + Piece.pieceValue(piece) * 2
-                        else:
-                            value = value + Piece.pieceValue(piece) * 2
-                    
+                value = value + self.__getMaterialValue(board, color, piece)
+                value = value + self.__getPositionValue(color, piece, row, col)
                     
         
         return value
     
+    
+    ##
+    # Determines the best 3 x 3 grid to construct a
+    # search space.
+    # @param board - the current board state
+    # @param color - the person's color.
+    # @return best_pos - the best position to construct a search of.
+    def strongestPosition(self, board, color):
 
+        best_pos = [0,0]
+        highestValue = 0
+        
+        
+        for row in range(0, len(board) - Evaluation.GRID_WIDTH):
+            for col in range (0, len(board) - Evaluation.GRID_HEIGHT):
+                total = self.evaluateBoard(board, color, row, col, row + Evaluation.GRID_WIDTH, col + Evaluation.GRID_HEIGHT)
+                if total > highestValue:
+                    best_pos = [row, col]
+                    highestValue = total
+  
+        return best_pos
     
-    ##
-    # Gets the value of the rabbit determined
-    # by how far it is across the board.
-    # The smallest value a rabbit can have in this
-    # evaluation is 2.
-    # For example, if the user has a black rabbit at row 0,
-    # the rabbit's value is 2 ^ (row + 1) = 2
-    # But if black's rabbit is at row 6 (one move from getting in the goal),
-    # then it's value is 2 ^ (row + 1) = 128.
-    # So as the rabbit progresses further down the board,
-    # it's value gets exponentially bigger.
-    # @param board - the current board state
-    # @param row - the row number the rabbit is in.
-    # @param col - the column number the rabbit is in.
-    # @param color - the person whose turn it is.
-    def __getRabbitValue(self, board, row, color):
+    
+    def __getMaterialValue(self, board, color, piece):
         
-        rabbitValue = Piece.pieceValue("r") * 2
+        value = 0
         
-        if color == "w":
-            rabbitValue = rabbitValue ** (len(board) - row)
-        elif color == "b":
-            rabbitValue = rabbitValue ** (row + 1)
+        if re.match("e", piece, re.IGNORECASE):     # Elephant
+            value = 1800
+        elif re.match("m", piece, re.IGNORECASE):   # Camel
+            value = 1100
+        elif re.match("h", piece, re.IGNORECASE):   # Horse
+            value = 600
+        elif re.match("d", piece, re.IGNORECASE):   # Dog
+            value = 300
+        elif re.match("c", piece, re.IGNORECASE):   # Cat
+            value = 250
+        elif re.match("r", piece, re.IGNORECASE):   # Rabbit
             
-        return rabbitValue
+            num_rabbits_left = 0
+            
+            for row in range (len(board)):
+                for col in range(len(board)):
+                    cur_piece = board[row][col]
+                    if cur_piece == piece:
+                        num_rabbits_left = num_rabbits_left + 1
+            
+            if num_rabbits_left == 8:
+                value = 100
+            elif num_rabbits_left == 7:
+                value = 150
+            elif num_rabbits_left == 6:
+                value = 200
+            elif num_rabbits_left == 5:
+                value = 250
+            elif num_rabbits_left == 4:
+                value = 300
+            elif num_rabbits_left == 3:
+                value = 400
+            elif num_rabbits_left == 2:
+                value = 500
+            elif num_rabbits_left == 1:
+                value = 1200
+                
+        return value 
     
-    
-    
-    ##
-    # Gets the value of the elephant.
-    # Since nothing is stronger than the elephant,
-    # it's position is vital.
-    # @param board - the current board state
-    # @param row - the row of this elephant
-    # @param col - the column of this elephant
-    def __getElephantValue(self, board, row, col):
+    def __getPositionValue(self, color, piece, row, col):
         
-        elephantValue = Piece.pieceValue("e")
+        if color == "b":
+            row = 8 - row
+            col = 8 - col
         
-        return elephantValue
+        value = 0
         
+        if re.match("e", piece, re.IGNORECASE):     # Elephant
+            value = Values.elephant_pos_values[row][col]
+        elif re.match("m", piece, re.IGNORECASE):   # Camel
+            value = Values.camel_pos_values[row][col]
+        elif re.match("h", piece, re.IGNORECASE):   # Horse
+            value = Values.horse_pos_values[row][col]
+        elif re.match("d", piece, re.IGNORECASE):   # Dog
+            value = Values.dog_pos_values[row][col]
+        elif re.match("c", piece, re.IGNORECASE):   # Cat
+            value = Values.cat_pos_values[row][col]
+        elif re.match("r", piece, re.IGNORECASE):   # Rabbit
+            value = Values.rabbit_pos_values_normal[row][col]
+            
+            
+        return value
     
     
     ##
@@ -280,28 +297,3 @@ class Evaluation(object):
             value = -1000
             
         return value
-        
-    
-    
-            
-
-    ##
-    # Determines the best 3 x 3 grid to construct a
-    # search space.
-    # @param board - the current board state
-    # @param color - the person's color.
-    # @return best_pos - the best position to construct a search of.
-    def strongestPosition(self, board, color):
-
-        best_pos = [0,0]
-        highestValue = 0
-        
-        
-        for row in range(0, len(board) - Evaluation.GRID_WIDTH):
-            for col in range (0, len(board) - Evaluation.GRID_HEIGHT):
-                total = self.evaluateBoard(board, color, row, col, row + Evaluation.GRID_WIDTH, col + Evaluation.GRID_HEIGHT)
-                if total > highestValue:
-                    best_pos = [row, col]
-                    highestValue = total
-  
-        return best_pos
