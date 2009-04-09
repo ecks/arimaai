@@ -166,7 +166,7 @@ class Evaluation(object):
                     
                     # If it has a piece frozen, that should add some points
                     # to its value.
-                    value = self.__hasPieceFrozen(board, row, col, piece)        
+                    value = self.__hasPiecesFrozen(board, row, col, piece)        
                             
                     # Add the rabbits value to the current value.
                     # If it's my own rabbit, then I add rabbit value ^ 2
@@ -236,21 +236,14 @@ class Evaluation(object):
     
     
     ##
-    # If this piece has another piece frozen,
-    # then for each piece frozen, the return value
-    # gets exponentially bigger. The standard value
-    # for each piece frozen is 10. So if this
-    # piece has 1 piece frozen, then it's 10.
-    # If it has 2 pieces frozen, then it returns 10.
-    # However if it has 4 pieces frozen, then that
-    # means it's trapped (NOT GOOD!!!!). That returns
-    # -1000.
+    # This determines a value to give to this
+    # piece if it has pieces frozen.
     # @param board - the current board state
     # @param row - the piece's row position
     # @param col - the piece's column position
     # @param piece - the piece
     # @param value - the value of this piece.
-    def __hasPieceFrozen(self, board, row, col, piece):
+    def __hasPiecesFrozen(self, board, row, col, piece):
                 
         value = 0
         piecesFrozen = 0
@@ -269,11 +262,18 @@ class Evaluation(object):
                 # If you're stronger than the adjacent piece,
                 # then you've frozen it.
                 if Piece.isStronger(piece, adj_piece):
-                    piecesFrozen
+                    piecesFrozen = piecesFrozen + 1
 
-        if piecesFrozen > 0:
-            value = 10 ** piecesFrozen
         
+        # Return a value now based on the number of pieces frozen.
+        # If it has too many pieces frozen, then it has potential
+        # to being trapped. So it needs to be careful.
+        if piecesFrozen == 1:
+            value = 100
+        elif piecesFrozen == 2:
+            value = 1000
+        elif piecesFrozen == 3:
+            value = -100
         if piecesFrozen == 4:
             value = -1000
             
