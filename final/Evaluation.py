@@ -122,7 +122,7 @@ class Evaluation(object):
 	      alpha = a
           
 	    if alpha >= beta:
-	      return (alpha,m)
+	      return (alpha,steps + " | " + m)
       
 	    if alpha >= b:
 	      (alpha,m) = self.negascout(depth - 1, -beta, -alpha, newBoardState, string.translate(color, self.nextColor), stepPerBoard, count, hash)
