@@ -35,7 +35,11 @@ if __name__ == '__main__':
         hash.calculateHashkey(board)  # Calculate the hash key for this given board.
     
 	eval = Evaluation.Evaluation()
+<<<<<<< HEAD:final/Driver.py
 	print(eval.negascout(3,-999999, 999999, board, color,steps, count, hash))
+=======
+	print(eval.negascout(0,-999999, 999999, board, color,steps, count, hash))
+>>>>>>> 0cb11fe8f3a33a27f0ebc9ac80921f478516b8bb:final/Driver.py
         
         # Generate all the possible moves for this board.
 #        generator = MoveGenerator.MoveGenerator(count, color, board, hash)
