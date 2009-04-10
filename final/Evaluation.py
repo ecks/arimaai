@@ -36,7 +36,7 @@ class Evaluation(object):
         
 
         for row in range(start_row, end_row + 1):
-            for col in range (start_col, end_row + 1):
+            for col in range (start_col, end_col + 1):
                 piece = board[row][col]
 
                 # If it's my piece, then add to my total.
@@ -59,8 +59,7 @@ class Evaluation(object):
     
     
     ##
-    # Determines the best 3 x 3 grid to construct a
-    # search space.
+    # Determines the best 3 x 3 grid to construct a search space.
     # @param board - the current board state
     # @param color - the person's color.
     # @return best_pos - the best position to construct a search of.
@@ -73,7 +72,7 @@ class Evaluation(object):
         
         for row in range(0, len(board) - Evaluation.GRID_WIDTH):
             for col in range (0, len(board) - Evaluation.GRID_HEIGHT):
-                total = self.evaluateBoard(board, color, row, col, row + Evaluation.GRID_WIDTH, col + Evaluation.GRID_HEIGHT, False)
+                total = self.evaluateBoard(board, color, row, False, col, row + Evaluation.GRID_WIDTH, col + Evaluation.GRID_HEIGHT)
                 if total > highestValue:
                     start_row = row
                     start_col = col
