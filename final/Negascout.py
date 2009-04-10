@@ -67,8 +67,8 @@ class Negascout(object):
         # to get to that board, and hash key for that board).
         turnList = moveGen.moveStepHashes
 	    
-
         for turn in turnList:
+	    print "here"
             newBoardState = turn[0]
             stepPerBoard = turn[1]
             hashForBoard = turn[2]
