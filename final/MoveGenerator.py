@@ -15,6 +15,7 @@ import random
 import Board
 import Step
 import Piece
+import Common
 
  
 class MoveGenerator(object):
@@ -100,7 +101,8 @@ class MoveGenerator(object):
                                  # This is definitely not a duplicate entry.
                                  self.hashkeys.insert(ins_pt, hashkey)
                                  self.moveStepHashes.append((self.board, all_steps_with_traps, hashkey))
-                                 #print all_steps_with_traps
+                                 print all_steps_with_traps, hashkey
+				 Common.displayBoard(self.board)
                     # Generate more moves with the updated board.
                     self.genMoves(all_steps, start_row, start_col, end_row, end_col)   
             

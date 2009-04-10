@@ -39,8 +39,10 @@ class Negascout(object):
 	    
         if (depth == 0):
             strength = self.eval.evaluateBoard(board, color) #returns the strength value of the board 
-            self.insertEntrySorted((hash.get_hashkey(), strength, steps), self.hashkeysEvalsSteps) 
-            stepsSaved = map(lambda x: x[2], self.hashkeysEvalsSteps)
+            self.insertEntrySorted((hash.get_hashkey(), strength, steps, board), self.hashkeysEvalsSteps)
+	    print "Adding to list"
+	    print strength,steps,hash.get_hashkey()
+	    Common.displayBoard(board)
             return (strength, steps)
         
         b = beta
@@ -78,17 +80,20 @@ class Negascout(object):
             
             currentHashKeys = map(lambda x: x[0], self.hashkeysEvalsSteps)
             
-	    if not self.isEntryInList(hashForBoard, currentHashKeys):
+	    if self.isEntryInList(hashForBoard, currentHashKeys) and depth == 1:
 	        # original entry, need to reevaluate
-            
+                # already got the evaluation of it, just return the evaluated value
+		ins_pt = self.getInsPt()
+                a = (self.hashkeysEvalsSteps[ins_pt][1],stepPerBoard)
+		print "Returning evaluated pos"
+		print a[0],a[1],self.hashkeysEvalsSteps[ins_pt][0]
+		Common.displayBoard(self.hashkeysEvalsSteps[ins_pt][3])
+             
+            else:
                 # descend one level and invert the function
                 bTemp = (-1 * b[0],b[1])
                 alphaTemp = (-1 * alpha[0], alpha[1])
                 a = self.negascout(depth - 1, bTemp, alphaTemp, newBoardState, newColor, stepPerBoard, count, hash)
-            else:
-                # already got the evaluation of it, just return the evaluated value
-		ins_pt = self.getInsPt()
-                a = (self.hashkeysEvalsSteps[ins_pt][1],self.hashkeysEvalsSteps[ins_pt][2])
             
             a = (a[0] * -1,a[1])
 
