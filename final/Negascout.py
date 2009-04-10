@@ -16,13 +16,17 @@ class Negascout(object):
 
     ##
     # Constructor Negascout
-    def __init__(self):
+    def __init__(self, board, color):
         self.hashkeysEvalsSteps = []
         self.evaluations = []
         
         self.eval = Evaluation.Evaluation()
 
-        # To-do: Determine best starting grid
+        (self.start_row, self.start_col, self.end_row, self.end_col) = self.eval.getStrongestGrid(board, color)
+        print "start row: " + str(self.start_row)
+        print "start col: " + str(self.start_col) 
+        print "end row: " + str(self.end_row)
+        print "end col: " + str(self.end_col)
 
     ##
     # Negascout algorithm
@@ -38,7 +42,7 @@ class Negascout(object):
     def negascout(self, depth, alpha, beta, board, color, steps, count, hash):
 	    
         if (depth == 0):
-            strength = self.eval.evaluateBoard(board, color) #returns the strength value of the board 
+            strength = self.eval.evaluateBoard(board, color, True) #returns the strength value of the board 
             self.insertEntrySorted((hash.get_hashkey(), strength, steps), self.hashkeysEvalsSteps) 
             stepsSaved = map(lambda x: x[2], self.hashkeysEvalsSteps)
             return (strength, steps)
@@ -51,12 +55,11 @@ class Negascout(object):
         # Construct a new MoveGenerator object for white and its board,
         # then generate all the possible moves.
         moveGen = MoveGenerator.MoveGenerator(count, color, board, hash)
-        # moveGen.genMoves("", lowRow, lowCol, highRow, highCol)
 
 	# make sure that there are no past moves being made, since 
 	# the function will confuse it with push or pull
-        moveGen.genMoves("")
-        
+        moveGen.genMoves("", self.start_row, self.start_col, self.end_row, self.end_col)
+        #moveGen.genMoves("")
         # The list of possible moves is stored in moveGen.moveStepHashes
         # as a list of tuples of the form (the board, the steps taken
         # to get to that board, and hash key for that board).
