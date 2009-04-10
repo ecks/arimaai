@@ -28,6 +28,11 @@ class Negascout(object):
         print "end row: " + str(self.end_row)
         print "end col: " + str(self.end_col)
 
+        self.start_row = 0
+        self.start_col = 0
+        self.end_row = 7
+        self.end_col = 7
+
     ##
     # Negascout algorithm
     # @param depth - 
@@ -46,7 +51,7 @@ class Negascout(object):
             self.insertEntrySorted((hash.get_hashkey(), strength), self.hashkeysEvalsSteps)
 	    print "Adding to list"
 	    print strength,steps,hash.get_hashkey()
-	    Common.displayBoard(board)
+	    #Common.displayBoard(board)
             return (strength, steps)
         
         b = beta
@@ -90,7 +95,7 @@ class Negascout(object):
                 a = (self.hashkeysEvalsSteps[ins_pt][0],stepPerBoard)
 		print "Returning evaluated pos"
 		print a[0],a[1],self.hashkeysEvalsSteps[ins_pt][0]
-		Common.displayBoard(self.hashkeysEvalsSteps[ins_pt][2])
+	#	Common.displayBoard(self.hashkeysEvalsSteps[ins_pt][2])
              
             else:
                 # descend one level and invert the function
