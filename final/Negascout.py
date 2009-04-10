@@ -42,7 +42,7 @@ class Negascout(object):
     def negascout(self, depth, alpha, beta, board, color, steps, count, hash):
 	    
         if (depth == 0):
-            strength = self.eval.evaluateBoard(board, color) #returns the strength value of the board 
+            strength = self.eval.evaluateBoard(board, color, True) #returns the strength value of the board 
             self.insertEntrySorted((hash.get_hashkey(), strength), self.hashkeysEvalsSteps)
 	    print "Adding to list"
 	    print strength,steps,hash.get_hashkey()
