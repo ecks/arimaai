@@ -12,6 +12,7 @@ import Hash
 import random
 import string
 import Negascout
+import MoveGenerator
 
  
 if __name__ == '__main__':
@@ -34,7 +35,7 @@ if __name__ == '__main__':
 
         hash = Hash.Hash()  # Construct a new hash
         hash.calculateHashkey(board)  # Calculate the hash key for this given board.
-    
+
 	nega = Negascout.Negascout(board, color)
 	unfilteredAnswer = nega.negascout(3,(-999999,""), (999999,""), board, color, steps, count, hash)
 	unfilteredMoves = unfilteredAnswer[1].split('|')
