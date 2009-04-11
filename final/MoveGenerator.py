@@ -61,6 +61,8 @@ class MoveGenerator(object):
         steps = []
         moves = []
         
+        self.__updateBoard(steps_in)
+
         # Construct Step objects out of all the previous steps
         # taken.
         for step_in in steps_in.split():
@@ -101,8 +103,8 @@ class MoveGenerator(object):
                                  # This is definitely not a duplicate entry.
                                  self.hashkeys.insert(ins_pt, hashkey)
                                  self.moveStepHashes.append((self.board, all_steps_with_traps, hashkey))
-                                 print all_steps_with_traps, hashkey
-				 Common.displayBoard(self.board)
+                                 #print all_steps_with_traps, hashkey
+				 #Common.displayBoard(self.board)
                     # Generate more moves with the updated board.
                     self.genMoves(all_steps, start_row, start_col, end_row, end_col)   
             
@@ -132,26 +134,34 @@ class MoveGenerator(object):
             self.hash.updateHashKey(step.start_row, step.start_col, piece, " ")
 
             # Delete the pieces starting position
-            self.board[step.start_row][step.start_col] = " "
+            if (step.start_row == 2 and step.start_col == 2) or \
+               (step.start_row == 2 and step.start_col == 5) or \
+               (step.start_row == 5 and step.start_col == 2) or \
+               (step.start_row == 5 and step.start_col == 5):
+                self.board[step.start_row][step.start_col] = "X"
+            else:   
+                self.board[step.start_row][step.start_col] = " "
+            
+            # Put this piece in its new place
+            self.board[step.end_row][step.end_col] = step.piece 
             
             trapped_piece = ""
             # Is the piece in a trap square?
-            if step.end_row == 2 and step.end_col == 2:
-                if not Board.isSafe(self.board, step.end_row, step.end_col):
-                    trapped_piece = piece + "c6x"
-            elif step.end_row == 2 and step.end_col == 5:
-                if not Board.isSafe(self.board, step.end_row, step.end_col):
-                    trapped_piece = piece + "f6x"
-            elif step.end_row == 5 and step.end_col == 2:
-                if not Board.isSafe(self.board, step.end_row, step.end_col):
-                    trapped_piece = piece + "c3x"
-            elif step.end_row == 5 and step.end_col == 5:
-                if not Board.isSafe(self.board, step.end_row, step.end_col):
-                    trapped_piece = piece + "f3x"
-            else:
-                # Put this piece in its new place
-                self.board[step.end_row][step.end_col] = step.piece 
-                self.hash.updateHashKey(step.end_row, step.end_col, " ", piece)    
+            if not Board.isSafe(self.board, 2, 2):
+               trapped_piece = self.board[2][2] + "c6x"
+               self.board[2][2] = "X"
+            elif not Board.isSafe(self.board, 2, 5):
+               trapped_piece = self.board[2][5] + "f6x"
+               self.board[2][5] = "X"
+            elif not Board.isSafe(self.board, 5, 2):
+               trapped_piece = self.board[5][2] + "c3x"
+               self.board[5][2] = "X"
+            elif not Board.isSafe(self.board, 5, 5):
+               trapped_piece = self.board[5][5] + "f3x"
+               self.board[5][5] = "X"
+           
+            piece = self.board[step.end_row][step.end_col] 
+            self.hash.updateHashKey(step.end_row, step.end_col, " ", piece)    
             
             if trapped_piece != "":
                 final_steps = final_steps + " " + trapped_piece
@@ -258,7 +268,7 @@ class MoveGenerator(object):
     
                         # Is the piece NOT frozen
                         if not Board.isFrozen(self.board, piece, row, col):
-                            unocc_adj_pos = self.__adjustRabbitPositions(piece, unocc_adj_pos)
+                            unocc_adj_pos = self.__adjustRabbitPositions(piece, row, col, unocc_adj_pos)
                             step = self.__makeStep(piece, row, col, unocc_adj_pos)
                             moves.append(step)
                             
@@ -367,12 +377,22 @@ class MoveGenerator(object):
     # If this is a rabbit, then remove the southern position
     # because rabbits can't move south on their own.
     # @param piece - the piece in question
+    # @param row - the piece's row
+    # @param col - the piece's column
     # @param positions - list of positions generated from __getAdjacentPositions
     # @return positions - the same list of positions, or positions without a south direction.
-    def __adjustRabbitPositions(self, piece, positions):
-        if (piece == "R" or piece == "r") and len(positions) >= 2:
-            del positions[1]    # index 1 is the south position
+    def __adjustRabbitPositions(self, piece, row, col, positions):
+        if (piece == "R" or piece == "r"):
             
+            i = 0
+            for position in positions:
+                positionRow = position[0]
+                if positionRow < row:
+                    del positions[i]
+                    break
+          
+            i = i + 1
+
         return positions
     
     

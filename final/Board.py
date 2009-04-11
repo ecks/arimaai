@@ -85,14 +85,19 @@ def getAdjacentPositions(board, row, col, occupied):
 # @param col - the column
 # @return True if it's safe, False otherwise.
 def isSafe(board, row, col):
+
+    piece = board[row][col]
+    if piece == "x" or piece == "X":
+        return True
+
+
     adj_occ_pos = getAdjacentPositions(board, row, col, True)
     for pos in adj_occ_pos:
         adj_row = pos[0]
         adj_col = pos[1]
         adj_piece = board[adj_row][adj_col]
-        piece = board[adj_row][adj_col]
-        if Piece.areFriends(adj_piece, piece):
+        if Piece.isFriends(adj_piece, piece):
             return True
-    
+   
     return False
     
