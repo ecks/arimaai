@@ -22,7 +22,7 @@ class MoveGenerator(object):
  
  
     # Most amount of steps we can make in a single turn.
-    MAX_STEPS = 2
+    MAX_STEPS = 3
  
     ##
     # MoveGenerator constructor
@@ -387,7 +387,7 @@ class MoveGenerator(object):
             i = 0
             for position in positions:
                 positionRow = position[0]
-                if positionRow < row:
+                if positionRow > row:
                     del positions[i]
                     break
           
