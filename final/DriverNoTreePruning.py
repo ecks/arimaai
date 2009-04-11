@@ -54,6 +54,7 @@ if __name__ == '__main__':
             turns = mv.moveStepHashes
 
             bestMoveStrength = -sys.maxint -1
+            bestStep = ""
  
             for turn in turns:
                 newBoard = turn[0]

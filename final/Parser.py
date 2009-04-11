@@ -33,15 +33,14 @@ class Parser(object):
         expr = re.compile('\d+')
         turn = expr.match(line).group() # turn number
         
-        # Sometimes the turn can come in as gold or silver.
-        # We would like to change it to white or black.
-        if turn == "g":
-            turn = "w"
-        elif turn == "s":
-            turn = "b"
-
         expr = re.compile('\D')
         color = expr.search(line).group() # white or black
+       
+        if color == "g":
+            color = "w"
+        elif color == "s":
+            color = "b" 
+           
         steps = ""
 
         # if len(line) >= 4:
