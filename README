@@ -35,7 +35,7 @@
   python Driver.py fileName
 # inside the directory 'final'
 #
-# Sample files are included in the 'final' directory.
+# Sample files are included in the 'final/sample_files' directory.
 #
 #
 # ===========
