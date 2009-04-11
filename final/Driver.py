@@ -46,11 +46,11 @@ if __name__ == '__main__':
             hash.calculateHashkey(board)  # Calculate the hash key for this given board.
 
 	    nega = Negascout.Negascout(board, color)
-	    unfilteredAnswer = nega.negascout(2,(-999999,"",board,hash.get_hashkey()), (999999,"",board,hash.get_hashkey()), board, color, steps, count, hash)
+	    unfilteredAnswer = nega.negascout(3,(-999999,"",board,hash.get_hashkey()), (999999,"",board,hash.get_hashkey()), board, color, steps, count, hash)
 	    unfilteredMoves = unfilteredAnswer[1].split('|')
 	    filteredAnswer = (unfilteredAnswer[0], unfilteredMoves[1])
             print unfilteredMoves[1].strip()
-	    #print "Answer: " + str(filteredAnswer)
+	    Common.displayBoard(unfilteredAnswer[2])
         
      
      

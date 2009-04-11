@@ -36,15 +36,16 @@ class Negascout(object):
 
     ##
     # Negascout algorithm
-    # @param depth - 
-    # @param alpha -
-    # @param beta
-    # @param board
-    # @param color
-    # @param steps
-    # @param count
-    # @param hash
-    # @return 
+    # @param depth - how deep we would like to go in the tree
+    # @param alpha - initial value of alpha
+    # @param beta - initial value of beta
+    # @param board - 2 dimensional list of the initial board
+    # @param color - initial color of the player
+    # @param steps - the steps that the player has already taken
+    # @param count - turn count 
+    # @param hash - a pointer to an object that is the hash of the board
+    # @return - a tuple: first element is integer value of strength, second element is steps taken, third element is 
+    #             the board at the end, fourth element is the hashkey of the ending board
     def negascout(self, depth, alpha, beta, board, color, steps, count, hash):
 	    
         if (depth == 0):
