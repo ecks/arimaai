@@ -50,8 +50,6 @@ if __name__ == '__main__':
 	    unfilteredMoves = unfilteredAnswer[1].split('|')
 	    filteredAnswer = (unfilteredAnswer[0], unfilteredMoves[1])
             print unfilteredMoves[1].strip()
-            Common.displayBoard(unfilteredAnswer[2])
-            print unfilteredAnswer[3]
 	    #print "Answer: " + str(filteredAnswer)
         
      
