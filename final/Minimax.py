@@ -69,12 +69,10 @@ class Minimax(object):
                     alpha = temp
 
                 if beta > alpha:
-                    print "Max cutoff " + stepPerBoard
                     return (best_move[0],steps + " | " + best_move[1],best_move[2])
           
  #               steps = stepPerBoard
             
-            print "Max " + steps;
             return (best_move[0],steps + " | " + best_move[1],best_move[2])
 
     def minmove(self, depth, board, color, steps, count, hash, alpha, beta):
@@ -118,10 +116,8 @@ class Minimax(object):
                     beta = temp
 
                 if beta[0] < alpha[0]:
-                    print "Min-cutoff " + stepPerBoard
                     return (best_move[0],steps + " | " + best_move[1],best_move[2])
                 
 #                steps = stepPerBoard
 
-            print "Min: " + steps
             return (best_move[0], steps + " | " + best_move[1],best_move[2])
