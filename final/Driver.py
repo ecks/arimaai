@@ -13,7 +13,7 @@ import random
 import string
 import Negascout
 import MoveGenerator
-
+import Common
  
 if __name__ == '__main__':
    
@@ -38,14 +38,21 @@ if __name__ == '__main__':
         (count, color, steps, board) = parser.parse() # Parse the file.
         file.close()
 
-        hash = Hash.Hash()  # Construct a new hash
-        hash.calculateHashkey(board)  # Calculate the hash key for this given board.
 
-	nega = Negascout.Negascout(board, color)
-	unfilteredAnswer = nega.negascout(2,(-999999,""), (999999,""), board, color, steps, count, hash)
-	unfilteredMoves = unfilteredAnswer[1].split('|')
-	filteredAnswer = (unfilteredAnswer[0], unfilteredMoves[1])
-	print "Answer: " + str(filteredAnswer)
+        if count == "1":
+            print MoveGenerator.MoveGenerator.randSetup(color)
+        else:           
+            hash = Hash.Hash()  # Construct a new hash
+            hash.calculateHashkey(board)  # Calculate the hash key for this given board.
+
+	    nega = Negascout.Negascout(board, color)
+	    unfilteredAnswer = nega.negascout(2,(-999999,"",board,hash.get_hashkey()), (999999,"",board,hash.get_hashkey()), board, color, steps, count, hash)
+	    unfilteredMoves = unfilteredAnswer[1].split('|')
+	    filteredAnswer = (unfilteredAnswer[0], unfilteredMoves[1])
+            print unfilteredMoves[1].strip()
+            Common.displayBoard(unfilteredAnswer[2])
+            print unfilteredAnswer[3]
+	    #print "Answer: " + str(filteredAnswer)
         
      
      

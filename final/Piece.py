@@ -53,8 +53,8 @@ def isStronger(a, b):
 # @param pieceA - the first piece
 # @param pieceB - the second piece
 # @return True if they are friends, False if they are enemies
-def areFriends(pieceA, pieceB):
-    if (pieceA.isupper() and pieceB.isupper) or (pieceA.islower() and pieceB.islower()):
+def isFriends(pieceA, pieceB):
+    if (pieceA.isupper() and pieceB.isupper()) or (pieceA.islower() and pieceB.islower()):
         return True
     else:
         return False
