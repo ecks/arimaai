@@ -14,8 +14,8 @@ import Values
 class Evaluation(object):
 
 
-    GRID_WIDTH = 3
-    GRID_HEIGHT = 3
+    GRID_WIDTH = 5
+    GRID_HEIGHT = 5
 
     def __init__(self):
         pass

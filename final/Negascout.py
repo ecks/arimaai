@@ -28,10 +28,10 @@ class Negascout(object):
         #print "end row: " + str(self.end_row)
        # print "end col: " + str(self.end_col)
 
-        self.start_row = 0
-        self.start_col = 0
-        self.end_row = 7
-        self.end_col = 7
+       # self.start_row = 0
+       # self.start_col = 0
+       # self.end_row = 7
+       # self.end_col = 7
     
 
     ##
