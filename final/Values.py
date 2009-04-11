@@ -1,7 +1,9 @@
 '''
-Created on Apr 9, 2009
+Filename: Values.py
+Description: Storage place for values on the board, given
+a particular piece.
 
-@author: eric
+@author: et
 '''
 
 INF = 9999

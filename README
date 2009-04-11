@@ -1,0 +1,74 @@
+# ============
+# REQUIREMENTS
+# Python 2.5.1: http://www.python.org/download/
+# Psyco: http://psyco.sourceforge.net/
+# 
+# Perl 5.1.0 (online version only): http://www.perl.org/get.html
+# Git 1.6.0.6 (to get updates): http://git-scm.com/download
+# 
+# This program can be run in two different ways:
+# Offline mode and online mode.
+#
+#
+# ============
+# OFFLINE MODE
+# To run in offline mode, have a file with the turn
+# number, whose turn it is to move, and the current
+# state of the board. The following is an example:
+7g
+ +-----------------+
+8|   r   r r   r   |
+7| m   h     e   c |
+6|   r x r r x r   |
+5| h   d     c   d |
+4| E   H         M |
+3|   R x R R H R   |
+2| D   C     C   D |
+1|   R   R R   R   |
+ +-----------------+
+   a b c d e d g h
+# 
+# 7 refers to the turn number, g means that it's gold's
+# turn to move, and the board state follows that.
+# 
+# To determine what the next best move for gold is, type:
+  python Driver.py fileName
+# inside the directory 'final'
+#
+# Sample files are included in the 'final' directory.
+#
+#
+# ===========
+# ONLINE MODE
+# In online mode, the program interfaces with the Arimaa
+# gameroom. Essentially, the program is consistently called
+# with different board states and asked to determine
+# the best move for whose turn it is.
+#
+# To run in online mode, type:
+  ./bot
+# inside the directory 'bot'
+# 
+# Then you must enter in the Arimaa gameroom:
+# http://arimaa.com/arimaa/gameroom/
+# where you should see the bot (named "bot_et") at a table.
+# There you can sit at the table with the
+# bot and play against it.
+# 
+#
+# =======
+# UPDATES
+# To get the latest version of the repository,
+# go to:
+# http://github.com/ecks/arimaai/tree/master
+# and clone the latest version of the master
+# tree by typing:
+  git clone git://github.com/ecks/arimaai.git
+#
+#
+# =========
+# QUESTIONS
+# Please email
+# eric - eric.l.m.thomas@gmail.com
+# hristo - njvsny@yahoo.com
+
