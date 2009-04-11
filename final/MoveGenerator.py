@@ -384,7 +384,7 @@ class MoveGenerator(object):
     # @param piece - the piece in question
     # @param row - the piece's row
     # @param col - the piece's column
-    # @param positions - list of positions generated from __getAdjacentPositions
+    # @param positions - list of positions generated from getAdjacentPositions
     # @return positions - the same list of positions, or positions without a south direction.
     def __adjustRabbitPositions(self, piece, row, col, positions):
         if piece == "R":
@@ -394,8 +394,8 @@ class MoveGenerator(object):
                 if positionRow > row:
                     del positions[i]
                     break
-      
-            i = i + 1
+                i = i + 1
+
         elif piece == "r":
             i = 0
             for position in positions:
@@ -403,8 +403,7 @@ class MoveGenerator(object):
                 if positionRow < row:
                     del positions[i]
                     break
-          
-            i = i + 1
+                i = i + 1
 
         return positions
     
