@@ -28,10 +28,10 @@ class Negascout(object):
         #print "end row: " + str(self.end_row)
        # print "end col: " + str(self.end_col)
 
-        self.start_row = 0
-        self.start_col = 0
-        self.end_row = 7
-        self.end_col = 7
+       # self.start_row = 0
+       # self.start_col = 0
+       # self.end_row = 7
+       # self.end_col = 7
     
 
     ##
@@ -73,8 +73,8 @@ class Negascout(object):
         # to get to that board, and hash key for that board).
         turnList = moveGen.moveStepHashes
 	    
-
         for turn in turnList:
+	    print "here"
             newBoardState = turn[0]
             stepPerBoard = turn[1]
             hashForBoard = turn[2]
