@@ -1,0 +1,13 @@
+Eric Thomas:
+ 
+Worked on generating all possible moves, mainly MoveGenerator.py the evaluation function Evaluation.py, and parsing moves from the Arimaa website inside genMove.py under the "Bot" folder
+ 
+ 
+Hristo Asenov:
+ 
+Worked on Zobrist Hashing, mainly Hash.py and negascout inside Negascout.py
+ 
+Paul Abbazia:
+ 
+started work on Negascout and Evaluation function, however everything that he wrote ended up being rewritten
+ 
