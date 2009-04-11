@@ -268,7 +268,7 @@ class MoveGenerator(object):
     
                         # Is the piece NOT frozen
                         if not Board.isFrozen(self.board, piece, row, col):
-                            unocc_adj_pos = self.__adjustRabbitPositions(piece, unocc_adj_pos)
+                            unocc_adj_pos = self.__adjustRabbitPositions(piece, row, col, unocc_adj_pos)
                             step = self.__makeStep(piece, row, col, unocc_adj_pos)
                             moves.append(step)
                             
@@ -377,12 +377,22 @@ class MoveGenerator(object):
     # If this is a rabbit, then remove the southern position
     # because rabbits can't move south on their own.
     # @param piece - the piece in question
+    # @param row - the piece's row
+    # @param col - the piece's column
     # @param positions - list of positions generated from __getAdjacentPositions
     # @return positions - the same list of positions, or positions without a south direction.
-    def __adjustRabbitPositions(self, piece, positions):
-        if (piece == "R" or piece == "r") and len(positions) >= 2:
-            del positions[1]    # index 1 is the south position
+    def __adjustRabbitPositions(self, piece, row, col, positions):
+        if (piece == "R" or piece == "r"):
             
+            i = 0
+            for position in positions:
+                positionRow = position[0]
+                if positionRow < row:
+                    del positions[i]
+                    break
+          
+            i = i + 1
+
         return positions
     
     
