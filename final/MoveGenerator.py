@@ -22,7 +22,7 @@ class MoveGenerator(object):
  
  
     # Most amount of steps we can make in a single turn.
-    MAX_STEPS = 2
+    MAX_STEPS = 3
  
     ##
     # MoveGenerator constructor
