@@ -1,13 +1,14 @@
-i'''
+'''
 Filename: Driver.py
 Description: Driver class to run our bot.
+ 
 @author: et
 '''
  
 import sys
 import os.path
 import Parser
-import Hash
+import Hash 
 import random
 import string
 import Negascout
@@ -37,19 +38,19 @@ if __name__ == '__main__':
         parser = Parser.Parser(file) # construct new parser object.
         (count, color, steps, board) = parser.parse() # Parse the file.
         file.close()
- 
- 
+
+
         if count == "1":
             print MoveGenerator.MoveGenerator.randSetup(color)
-        else:
-            hash = Hash.Hash() # Construct a new hash
-            hash.calculateHashkey(board) # Calculate the hash key for this given board.
- 
+        else:           
+            hash = Hash.Hash()  # Construct a new hash
+            hash.calculateHashkey(board)  # Calculate the hash key for this given board.
+
             mini = Minimax.Minimax(board, color)
             res = mini.minimax(3, board, color, "", count, hash)
- 
-   print res[0], res[1]
-   Common.displayBoard(res[2])
+
+	    print res[0], res[1]
+	    Common.displayBoard(res[2])
            
      
      
@@ -58,3 +59,4 @@ if __name__ == '__main__':
         
         
     sys.exit()
+ 
