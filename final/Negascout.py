@@ -50,9 +50,9 @@ class Negascout(object):
         if (depth == 0):
             strength = self.eval.evaluateBoard(board, color, True) #returns the strength value of the board 
             self.insertEntrySorted((hash.get_hashkey(), strength,board), self.hashkeysEvalsSteps)
-	    print "Adding to list"
-	    print strength,steps,hash.get_hashkey()
-	    Common.displayBoard(board)
+#	    print "Adding to list"
+#	    print strength,steps,hash.get_hashkey()
+#	    Common.displayBoard(board)
             return (strength, steps,board,hash.get_hashkey())
         
         b = beta
@@ -74,7 +74,7 @@ class Negascout(object):
         turnList = moveGen.moveStepHashes
 	    
         for turn in turnList:
-	    print "here"
+	    #print "here"
             newBoardState = turn[0]
             stepPerBoard = turn[1]
             hashForBoard = turn[2]
@@ -94,9 +94,9 @@ class Negascout(object):
                 # already got the evaluation of it, just return the evaluated value
 		ins_pt = self.getInsPt()
                 a = (self.hashkeysEvalsSteps[ins_pt][0],stepPerBoard,self.hashkeysEvalsSteps[2],self.hashkeysEvalsSteps[3])
-		print "Returning evaluated pos"
-		print a[0],a[1],self.hashkeysEvalsSteps[ins_pt][0]
-		Common.displayBoard(self.hashkeysEvalsSteps[ins_pt][2])
+	#	print "Returning evaluated pos"
+	#	print a[0],a[1],self.hashkeysEvalsSteps[ins_pt][0]
+	#	Common.displayBoard(self.hashkeysEvalsSteps[ins_pt][2])
              
             else:
                 # descend one level and invert the function
@@ -126,13 +126,21 @@ class Negascout(object):
         
         return (alpha[0],steps + " | " + alpha[1],alpha[2],alpha[3])
 
+    ##
+    # Inserts an entry into a list, which is sorted
+    # @param entry - entry to add to list
+    # @param list - list to which to add entry to
     def insertEntrySorted(self, entry, list):
 	    ins_pt = bisect.bisect_left(list, entry)
 	    if len(list) == ins_pt or entry != list[ins_pt]:
                 list.insert(ins_pt, entry)
 	    else:
                 raise Exception, "You are trying to append to list after evaluation, and the entry was found which is impossible!!!"
-      
+    ##
+    # Checks whether entry is in list
+    # @param entry - element to check if its in list
+    # @param list - the list to check whether an element is in
+    # @return True if element is in list, False otherwise
     def isEntryInList(self, entry, list):
 	    ins_pt = bisect.bisect_left(list, entry)
 	    if len(list) == ins_pt or entry != list[ins_pt]:
@@ -142,6 +150,9 @@ class Negascout(object):
                 self.found_ins_pt = ins_pt
                 return True
 
+    ##
+    # Finds insertion point in list
+    # @return the index where the element is supposed to be in
     def getInsPt(self):
             if self.found_ins_pt == -1:
                 raise Exception, "Trying to access insertion point when it wasn't defined"
