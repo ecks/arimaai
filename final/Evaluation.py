@@ -14,8 +14,8 @@ import Values
 class Evaluation(object):
 
 
-    GRID_WIDTH = 3
-    GRID_HEIGHT = 3
+    GRID_WIDTH = 4
+    GRID_HEIGHT = 4
 
     def __init__(self):
         pass
@@ -114,21 +114,21 @@ class Evaluation(object):
                         num_rabbits_left = num_rabbits_left + 1
             
             if num_rabbits_left == 8:
-                value = 100
-            elif num_rabbits_left == 7:
-                value = 150
-            elif num_rabbits_left == 6:
-                value = 200
-            elif num_rabbits_left == 5:
-                value = 250
-            elif num_rabbits_left == 4:
-                value = 300
-            elif num_rabbits_left == 3:
-                value = 400
-            elif num_rabbits_left == 2:
-                value = 500
-            elif num_rabbits_left == 1:
                 value = 1200
+            elif num_rabbits_left == 7:
+                value = 500
+            elif num_rabbits_left == 6:
+                value = 400
+            elif num_rabbits_left == 5:
+                value = 300
+            elif num_rabbits_left == 4:
+                value = 250
+            elif num_rabbits_left == 3:
+                value = 200
+            elif num_rabbits_left == 2:
+                value = 150
+            elif num_rabbits_left == 1:
+                value = 100
                 
         return value 
     

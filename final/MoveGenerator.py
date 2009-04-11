@@ -376,25 +376,36 @@ class MoveGenerator(object):
     ##
     # If this is a rabbit, then remove the southern position
     # because rabbits can't move south on their own.
+    # It's important to remember that our board's 0,0 position
+    # starts in the top left corner. Also it should be noted
+    # that a south move for black is different from a south move for white
+    # since black is always at the top of the table and white is at the
+    # bottom of the table.
     # @param piece - the piece in question
     # @param row - the piece's row
     # @param col - the piece's column
-    # @param positions - list of positions generated from __getAdjacentPositions
+    # @param positions - list of positions generated from getAdjacentPositions
     # @return positions - the same list of positions, or positions without a south direction.
     def __adjustRabbitPositions(self, piece, row, col, positions):
-        if (piece == "R" or piece == "r"):
-            
+        if piece == "R":
+            i = 0
+            for position in positions:
+                positionRow = position[0]
+                if positionRow > row:
+                    del positions[i]
+                    break
+                i = i + 1
+
+        elif piece == "r":
             i = 0
             for position in positions:
                 positionRow = position[0]
                 if positionRow < row:
                     del positions[i]
                     break
-          
-            i = i + 1
+                i = i + 1
 
         return positions
-    
     
     
     
