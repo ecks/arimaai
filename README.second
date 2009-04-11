@@ -1,0 +1,3 @@
+To run the program with Negascout, use the Driver.py file
+To run the program with Minimax, use the DriverMinimax.py file
+To run the program with no tree pruning, use the DriverNoTreePruning.py file
