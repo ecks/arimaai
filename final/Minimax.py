@@ -16,6 +16,8 @@ class Minimax(object):
 
     ##
     # Constructor Minimax
+    # @param board - board from which we want to generate all moves
+    # @param color - color of the initial board
     def __init__(self, board, color):
         self.hashkeysEvalsSteps = []
         self.evaluations = []
@@ -35,7 +37,9 @@ class Minimax(object):
     
 
 
-
+    ##
+    # Minimax with alpha-beta pruning
+    # Source: http://ai-depot.com/articles/minimax-explained/
     def minimax(self, depth, board, color, steps, count, hash):
         return self.maxmove(depth, board, color, steps, count, hash, (99999999,steps,board) , (-99999999,steps,board))
 
