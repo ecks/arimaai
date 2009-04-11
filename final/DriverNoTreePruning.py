@@ -62,7 +62,7 @@ if __name__ == '__main__':
                     bestStep = turn[1]
                     bestMoveStrength = strength
 
-            print bestStep
+            print bestStep.strip()
               
      
     else:
