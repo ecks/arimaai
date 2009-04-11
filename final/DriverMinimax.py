@@ -48,8 +48,8 @@ if __name__ == '__main__':
 
             mini = Minimax.Minimax(board, color)
             res = mini.minimax(3, board, color, "", count, hash)
-	    print res[0], res[1]
-	    Common.displayBoard(res[2])
+	    move = res[1].split('|')
+	    print move[1].strip()
            
      
      
