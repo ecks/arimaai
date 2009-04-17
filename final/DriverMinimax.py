@@ -47,7 +47,7 @@ if __name__ == '__main__':
             hash.calculateHashkey(board)  # Calculate the hash key for this given board.
 
             mini = Minimax.Minimax(board, color)
-            res = mini.minimax(3, board, color, "", count, hash)
+            res = mini.minimax(2, board, color, "", count, hash)
 	    move = res[1].split('|')
 	    print move[1].strip()
            

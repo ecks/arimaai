@@ -41,12 +41,13 @@ class Minimax(object):
     # Minimax with alpha-beta pruning
     # Source: http://ai-depot.com/articles/minimax-explained/
     def minimax(self, depth, board, color, steps, count, hash):
-        return self.maxmove(depth, board, color, steps, count, hash, (99999999,steps,board) , (-99999999,steps,board))
+        return self.maxmove(depth, board, color, steps, count, hash, (-99999999,steps,board,hash.get_hashkey()) , (99999999,steps,board,hash.get_hashkey()))
 
     def maxmove(self, depth, board, color, steps, count, hash, alpha, beta):
         if (depth == 0):
             strength = self.eval.evaluateBoard(board, color, True)
-	    return (strength,steps,board)
+#	    self.insertEntrySorted((hash.get_hashkey(),strength,steps,board), self.hashkeysEvalsSteps)
+	    return (strength,steps,board,hash.get_hashkey())
 
         else:
             best_move = (-999999,steps,board)
@@ -57,37 +58,56 @@ class Minimax(object):
             for turn in turnList:
                 newBoardState = turn[0]
                 stepPerBoard = turn[1]   
-       
+		hashForBoard = turn[2]
+      
+                hash.resetInitialHashKey(hashForBoard)
+
                 if depth == 1:
 		  newColor = color
 		else:
                   if color == "w":
                      newColor = "b"
                   else:
-                     newColor = "b"
+                     newColor = "w"
 
-                temp = self.minmove(depth - 1, newBoardState, newColor, stepPerBoard, count, hash, alpha, beta)
+		#print stepPerBoard
+
+#		print "Inside Maxmove " + stepPerBoard + " " + str(hashForBoard)
+                currentHashKeys = map(lambda x: x[0], self.hashkeysEvalsSteps)
+               
+                # need to change this in future because as of right now, will short circuit,
+		# i just know that this is useless with depth of 2 and searching through list 
+		# will take more unnecessary processing time
+		if depth == 1 and self.isEntryInList(hashForBoard, currentHashKeys):
+		  ins_pt = self.getInsPt()
+		  temp = (self.hashkeysEvalsSteps[ins_pt][1],stepPerBoard,self.hashkeysEvalsSteps[ins_pt][2],self.hashkeysEvalsSteps[ins_pt][0])
+		else:
+                  temp = self.minmove(depth - 1, newBoardState, newColor, stepPerBoard, count, hash, alpha, beta)
+
+#		print "Returned to Maxmove: " + str(temp[0]) + " for " + temp[1]
       
-                if temp > best_move:
-                    best_move = temp
+#                if temp[0] > best_move[0]:
+                if temp[0] > alpha[0]:
+#                    best_move = temp
                     alpha = temp
 
-                if beta > alpha:
-                    return (best_move[0],steps + " | " + best_move[1],best_move[2])
+                if alpha[0] > beta[0]:
+                    return (beta[0],steps + " | " + beta[1],beta[2],beta[3])
           
  #               steps = stepPerBoard
             
-            return (best_move[0],steps + " | " + best_move[1],best_move[2])
+            return (alpha[0],steps + " | " + alpha[1],alpha[2],alpha[3])
 
     def minmove(self, depth, board, color, steps, count, hash, alpha, beta):
 	   
         if (depth == 0):
             strength = self.eval.evaluateBoard(board, color, True) #returns the strength value of the board 
-            return (strength,steps,board)
+	    self.insertEntrySorted((hash.get_hashkey(),strength,steps),board,self.hashkeysEvalsSteps)
+            return (strength,steps,board,hash.get_hashkey())
         
 	else:    
            
-            best_move = (-99999999,steps,board)
+            best_move = (99999999,steps,board)
 
             turnList = []
             # Construct a new MoveGenerator object for white and its board,
@@ -96,15 +116,21 @@ class Minimax(object):
 
 	    # make sure that there are no past moves being made, since 
 	    # the function will confuse it with push or pull
-            moveGen.genMoves("", self.start_row, self.start_col, self.end_row, self.end_col)
+       #     moveGen.genMoves("", self.start_row, self.start_col, self.end_row, self.end_col)
+            moveGen.genMoves("")
             # The list of possible moves is stored in moveGen.moveStepHashes
             # as a list of tuples of the form (the board, the steps taken
             # to get to that board, and hash key for that board).
             turnList = moveGen.moveStepHashes
-	    
+
+#	    print len(turnList)
+
             for turn in turnList:
                 newBoardState = turn[0]
                 stepPerBoard = turn[1]
+		hashForBoard = turn[2]
+
+		hash.resetInitialHashKey(hashForBoard)
 
                 if depth == 1:
 		  newColor = color
@@ -114,15 +140,46 @@ class Minimax(object):
                   else:
                      newColor = "w"
             
-                temp = self.maxmove(depth - 1, newBoardState, newColor, stepPerBoard, count, hash, alpha, beta)
-                if temp[0] > best_move[0]:
-                    best_move = temp
+#                print "Inside Minmove " + stepPerBoard + " " + str(hashForBoard)
+                currentHashKeys = map(lambda x: x[0], self.hashkeysEvalsSteps)
+
+                if self.isEntryInList(hashForBoard,currentHashKeys) and depth == 1:
+		  ins_pt = self.getInsPt()
+		  temp = (self.hashkeysEvalsSteps[ins_pt][1],stepPerBoard,self.hashkeysEvalsSteps[ins_pt][2],self.hashkeysEvalsSteps[0])
+		else:
+		  temp = self.maxmove(depth - 1, newBoardState, newColor, stepPerBoard, count, hash, alpha, beta)
+#                print "result: " + str(temp[0])
+
+      #          if temp[0] > best_move[0]:
+      #              best_move = temp
+		if temp[0] < beta[0]:
                     beta = temp
 
                 if beta[0] < alpha[0]:
-                    return (best_move[0],steps + " | " + best_move[1],best_move[2])
+                    return (alpha[0],steps + " | " + alpha[1],alpha[2],alpha[3])
                 
-#                steps = stepPerBoard
 
-            return (best_move[0], steps + " | " + best_move[1],best_move[2])
+            return (beta[0], steps + " | " + beta[1],beta[2],beta[3])
 
+    def insertEntrySorted(self, entry, list):
+	    ins_pt = bisect.bisect_left(list, entry)
+	    if len(list) == ins_pt or entry != list[ins_pt]:
+                list.insert(ins_pt, entry)
+	    else:
+                raise Exception, "You are trying to append to list after evaluation, and the entry was found which is impossible!!!"
+      
+    def isEntryInList(self, entry, list):
+	    ins_pt = bisect.bisect_left(list, entry)
+	    if len(list) == ins_pt or entry != list[ins_pt]:
+		self.found_ins_pt = -1
+                return False
+	    else:
+                self.found_ins_pt = ins_pt
+                return True
+
+    def getInsPt(self):
+            if self.found_ins_pt == -1:
+                raise Exception, "Trying to access insertion point when it wasn't defined"
+	    else:
+                return self.found_ins_pt
+ 
