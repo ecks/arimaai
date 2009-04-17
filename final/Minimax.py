@@ -24,7 +24,6 @@ class Minimax(object):
         
         self.eval = Evaluation.Evaluation()
 
-        (self.start_row, self.start_col, self.end_row, self.end_col) = self.eval.getStrongestGrid(board, color)
         #print "start row: " + str(self.start_row)
         #print "start col: " + str(self.start_col) 
         #print "end row: " + str(self.end_row)
@@ -46,13 +45,13 @@ class Minimax(object):
     def maxmove(self, depth, board, color, steps, count, hash, alpha, beta):
         if (depth == 0):
             strength = self.eval.evaluateBoard(board, color, True)
-#	    self.insertEntrySorted((hash.get_hashkey(),strength,steps,board), self.hashkeysEvalsSteps)
+	    self.insertEntrySorted((hash.get_hashkey(),strength,steps,board), self.hashkeysEvalsSteps)
 	    return (strength,steps,board,hash.get_hashkey())
 
         else:
-            best_move = (-999999,steps,board)
+            (start_row, start_col, end_row, end_col) = self.eval.getStrongestGrid(board, color)
             moveGen = MoveGenerator.MoveGenerator(count, color, board, hash)
-            moveGen.genMoves("")
+            moveGen.genMoves("",start_row,start_col,end_row,end_col)
             turnList = moveGen.moveStepHashes
 
             for turn in turnList:
@@ -86,9 +85,7 @@ class Minimax(object):
 
 #		print "Returned to Maxmove: " + str(temp[0]) + " for " + temp[1]
       
-#                if temp[0] > best_move[0]:
                 if temp[0] > alpha[0]:
-#                    best_move = temp
                     alpha = temp
 
                 if alpha[0] > beta[0]:
@@ -102,14 +99,14 @@ class Minimax(object):
 	   
         if (depth == 0):
             strength = self.eval.evaluateBoard(board, color, True) #returns the strength value of the board 
-	    self.insertEntrySorted((hash.get_hashkey(),strength,steps),board,self.hashkeysEvalsSteps)
+	    self.insertEntrySorted((hash.get_hashkey(),strength,steps,board),self.hashkeysEvalsSteps)
             return (strength,steps,board,hash.get_hashkey())
         
 	else:    
            
-            best_move = (99999999,steps,board)
 
             turnList = []
+            (start_row, start_col, end_row, end_col) = self.eval.getStrongestGrid(board, color)
             # Construct a new MoveGenerator object for white and its board,
             # then generate all the possible moves.
             moveGen = MoveGenerator.MoveGenerator(count, color, board, hash)
@@ -117,7 +114,7 @@ class Minimax(object):
 	    # make sure that there are no past moves being made, since 
 	    # the function will confuse it with push or pull
        #     moveGen.genMoves("", self.start_row, self.start_col, self.end_row, self.end_col)
-            moveGen.genMoves("")
+            moveGen.genMoves("",start_row,start_col,end_row,end_col)
             # The list of possible moves is stored in moveGen.moveStepHashes
             # as a list of tuples of the form (the board, the steps taken
             # to get to that board, and hash key for that board).
@@ -150,8 +147,6 @@ class Minimax(object):
 		  temp = self.maxmove(depth - 1, newBoardState, newColor, stepPerBoard, count, hash, alpha, beta)
 #                print "result: " + str(temp[0])
 
-      #          if temp[0] > best_move[0]:
-      #              best_move = temp
 		if temp[0] < beta[0]:
                     beta = temp
 
